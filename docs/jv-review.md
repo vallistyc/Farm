@@ -11,7 +11,7 @@ Review focus:
 - Currency labels and status words (Aman, Tipis, Rugi) are clear.
 - No string is ambiguous when translated back to Indonesian.
 
-Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 251.
+Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 287.
 
 ## app
 
@@ -110,7 +110,7 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 251.
 | `home.quickCalc` | Calculate price | Etung rega |
 | `home.quickCost` | Add cost | Tambah biaya |
 | `home.quickMarket` | View market price | Deleng rega pasar |
-| `home.demoNote` | Prototype for iASI 2026. Market prices will use sample data. | Prototipe iASI 2026. Rega pasar bakal nganggo data conto. |
+| `home.demoNote` | Prototype for iASI 2026. Market prices use official PriceCatcher data when available. | Prototipe iASI 2026. Rega pasar nganggo data resmi PriceCatcher yen ana. |
 | `home.latestCrop` | Latest crop | Tanaman pungkasan |
 | `home.viewRecommendation` | View recommendation | Deleng saran |
 | `home.summaryLine` | {commodity} · {status} | {commodity} · {status} |
@@ -191,6 +191,8 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 251.
 | `farm.wizard.yieldTitle` | Yield and loss | Asil panen lan susut |
 | `farm.wizard.yieldHint` | Estimate how much you will harvest after losses. | Kira-kira asil panen sawise susut. |
 | `farm.wizard.addLine` | Add cost | Tambah biaya |
+| `farm.wizard.suggestionTitle` | Suggested costs | Biaya sing disaranake |
+| `farm.wizard.suggestionHint` | Tap a cost to add it, then enter the amount. | Pencet biaya kanggo nambah, banjur isi nominale. |
 | `farm.wizard.lineLabel` | Cost name | Jeneng biaya |
 | `farm.wizard.lineAmount` | Amount | Nominal |
 | `farm.wizard.lineLabelPlaceholder` | e.g. Seeds | contone: Wiji |
@@ -215,6 +217,30 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 251.
 | `farm.hiddenCosts.certification` | Certification | Sertifikasi |
 | `farm.hiddenCosts.marketFee` | Market fee | Retribusi pasar |
 | `farm.hiddenCosts.familyLabour` | Unpaid family labour | Tenaga kerja keluarga (ora dibayar) |
+| `farm.hiddenHints.transport` | Taking the harvest to the market, buyer, or warehouse. | Ongkos ngangkut asil menyang pasar, panuku, utawa gudang. |
+| `farm.hiddenHints.packaging` | Sacks, crates, ties, and labels. | Karung, krat, iketan, lan label. |
+| `farm.hiddenHints.postHarvestLoss` | Spoiled or lost part of the harvest. | Bagian panen sing rusak utawa susut. |
+| `farm.hiddenHints.commission` | The middleman's cut. | Potongan tengkulak saka dodolan. |
+| `farm.hiddenHints.storage` | Warehouse rent or storage fees. | Sewa gudang utawa biaya nyimpen. |
+| `farm.hiddenHints.irrigation` | Water, electricity, and pump fuel. | Banyu, listrik, lan bahan bakar pompa. |
+| `farm.hiddenHints.equipment` | Wear on tools, pumps, and machines. | Penyusutan pacul, pompa, lan mesin. |
+| `farm.hiddenHints.loanInterest` | Interest on money borrowed for the season. | Bunga utang modal tandur. |
+| `farm.hiddenHints.certification` | Certificates or quality tests. | Biaya sertifikat utawa uji mutu. |
+| `farm.hiddenHints.marketFee` | Market or stall fees. | Retribusi pasar utawa papan dodolan. |
+| `farm.hiddenHints.familyLabour` | Family work you do not pay for. | Kerja keluarga sing ora mbok bayar. |
+| `farm.costItems.seeds` | Seeds / seedlings | Wiji / bibit |
+| `farm.costItems.fertiliser` | Fertiliser | Pupuk |
+| `farm.costItems.compost` | Compost / manure | Pupuk kandang / kompos |
+| `farm.costItems.pesticide` | Pesticide | Obat hama |
+| `farm.costItems.mulch` | Mulch | Mulsa |
+| `farm.costItems.stakes` | Stakes / support | Ajir / penyangga |
+| `farm.costItems.lime` | Agricultural lime | Kapur pertanian |
+| `farm.costItems.landPrep` | Land preparation | Ngolah lemah |
+| `farm.costItems.planting` | Planting | Tandur |
+| `farm.costItems.fertilising` | Fertilising | Mupuk |
+| `farm.costItems.weeding` | Weeding | Nyiangi |
+| `farm.costItems.spraying` | Spraying | Nyemprot |
+| `farm.costItems.harvest` | Harvesting | Panen |
 
 ## calc
 
@@ -303,16 +329,26 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 251.
 | Key | English | Basa Jawa |
 | --- | --- | --- |
 | `community.title` | Community | Paguyuban |
-| `community.description` | Talk with other farmers by commodity or region. | Ngobrol karo petani liya miturut komoditas utawa wilayah. |
-| `community.mockNote` | Sample rooms for the demo. Chat is not live. | Kamar conto kanggo demo. Obrolan ora langsung. |
+| `community.description` | Talk with other farmers by commodity. | Ngobrol karo petani liya miturut komoditas. |
+| `community.liveNote` | Messages are saved and shown to every farmer in the room. | Pesen disimpen lan katon kanggo kabeh petani ing kamar iki. |
+| `community.missingTable` | Chat is not active yet. Run supabase/schema.sql in the Supabase SQL editor, then reload. | Obrolan durung aktif. Jalanake supabase/schema.sql ing SQL Editor Supabase, banjur muat ulang. |
 | `community.roomsTitle` | Rooms | Kamar |
-| `community.members` | {count} members | {count} anggota |
-| `community.rooms.paddy.name` | Paddy Farmers | Petani Pari |
-| `community.rooms.paddy.preview` | Ahmad: The mill is paying RM2.60 today. | Ahmad: Pabrik mbayar RM2,60 dina iki. |
+| `community.openRoom` | Open room | Bukak kamar |
+| `community.backToRooms` | All rooms | Kabeh kamar |
+| `community.emptyTitle` | No messages yet | Durung ana pesen |
+| `community.emptyDescription` | Write the first message for this room. | Tulis pesen pisanan ing kamar iki. |
+| `community.inputLabel` | Your message | Pesenmu |
+| `community.placeholder` | Type a message... | Tulis pesen... |
+| `community.send` | Send | Kirim |
+| `community.errorLoad` | Could not load messages. Check your connection and try again. | Pesen gagal dimuat. Cek sambungan banjur coba maneh. |
+| `community.errorSend` | Message not sent. Try again. | Pesen gagal dikirim. Coba maneh. |
+| `community.you` | You | Kowe |
+| `community.rooms.padi.name` | Paddy Farmers | Petani Pari |
+| `community.rooms.padi.preview` | Paddy prices, fertiliser, and planting schedules. | Rega gabah, pupuk, lan jadwal tandur. |
 | `community.rooms.chilli.name` | Red Chilli Growers | Petani Lombok Abang |
-| `community.rooms.chilli.preview` | Siti: Prices are rising this week. | Siti: Rega mundhak minggu iki. |
+| `community.rooms.chilli.preview` | Chilli prices, pests, and harvest news. | Rega lombok, hama, lan kabar panen. |
 | `community.rooms.beginners.name` | New Farmers | Petani Anyar |
-| `community.rooms.beginners.preview` | How do you record hidden costs? | Kepiye nyathet biaya sing ndhelik? |
+| `community.rooms.beginners.preview` | Ask about costs, yields, and selling. | Takon bab biaya, asil, lan cara ngedol. |
 
 ## profile
 

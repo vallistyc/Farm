@@ -15,17 +15,17 @@ Mobile-first PWA that helps farmers set a selling price for their harvest based 
 
 ## Scope
 Competition prototype, NOT for real users. Prioritize a polished, working demo of the core flow. Do not over-engineer.
-- Live (real logic): Cost Input, Hidden Costs Checklist, Selling Price Calculator, Recommendation, AI Advice, Fields and Crops (simple), Supabase sync for farms/crops, Price Radar from official PriceCatcher data
+- Live (real logic): Cost Input, Hidden Costs Checklist, Selling Price Calculator, Recommendation, AI Advice, Fields and Crops (simple), Supabase sync for farms/crops, Price Radar from official PriceCatcher data, Community chat per room stored in Supabase
 - Seed fallback: padi and maize keep the JSON sample series because PriceCatcher has no farm-gate padi or fresh maize item; the UI labels the source per commodity
 - Static: language switch (en, id, ms, jv), currency (live free API with fallback to fixed rate table)
-- Mock or skip: Community Chats (mock UI only), Environmental Info, offline mode, admin panel
+- Mock or skip: Environmental Info, offline mode, admin panel
 - Auth: demo login with phone number + 4-digit PIN, seeded accounts, no OTP
 
 ## Stack
 Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service worker), daily PriceCatcher prices with JSON seed fallback, farms/crops synced to Supabase Postgres with localStorage as the offline cache, deploy target Vercel.
 
 ## Cloud data (Supabase)
-- `supabase/schema.sql` creates `farms` and `crops` keyed by `(owner_id, id)`; run it in the Supabase SQL editor.
+- `supabase/schema.sql` creates `farms` and `crops` keyed by `(owner_id, id)`, the `market_prices` history table, and `community_messages`; run it in the Supabase SQL editor.
 - The client talks to Supabase REST with the public anon/publishable key only. Never add a service-role key to the client.
 - Sync is local-first: localStorage is the cache, login pulls then merges last-write-wins per crop by `updatedAt`, and every change is pushed debounced. No hard deletes.
 - RLS in the schema is permissive demo-only. Replace it with Supabase Auth plus `auth.uid()` policies before real user data.
@@ -58,6 +58,7 @@ Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service
   - Market < MSP: Rugi, show warning and advice (hold sale, find other market, reduce cost)
 - Store all money in MYR internally, convert only for display
 - Put this logic in one pure, unit-tested module (lib/pricing.ts)
+- Cost suggestions come from `lib/cost-catalog.ts` (per-commodity direct costs, shared labour costs). They only prefill a label so the farmer types the amount; never hardcode amounts. Sources and hidden-cost definitions live in `docs/cost-catalog.md`.
 
 ## Hidden costs checklist (seed)
 Transport, packaging, post-harvest loss, middleman commission, storage, irrigation water and electricity, equipment depreciation, loan interest, certification, market fee, unpaid family labour.

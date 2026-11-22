@@ -79,3 +79,27 @@ create policy "demo anon market prices"
   to anon
   using (true)
   with check (true);
+
+-- Community chat rooms. Room ids are defined in lib/community.ts. Messages are
+-- shared by every demo account, so only use non-sensitive content here.
+create table if not exists public.community_messages (
+  id text primary key,
+  room_id text not null,
+  author_id text not null,
+  author_name text not null,
+  body text not null check (char_length(body) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists community_messages_room_time_idx
+  on public.community_messages (room_id, created_at);
+
+alter table public.community_messages enable row level security;
+
+drop policy if exists "demo anon community messages" on public.community_messages;
+create policy "demo anon community messages"
+  on public.community_messages
+  for all
+  to anon
+  using (true)
+  with check (true);

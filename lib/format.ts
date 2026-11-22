@@ -8,6 +8,15 @@ export function formatDate(iso: string, localeTag: string): string {
   }).format(date);
 }
 
+export function formatTime(iso: string, localeTag: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(localeTag, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function formatPercentChange(value: number): string {
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   return `${sign}${Math.abs(value).toFixed(1)}%`;

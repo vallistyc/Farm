@@ -15,7 +15,7 @@ Brief: `docs/Brief_Document_Harga_Jual_Petani_v1.1.pdf`
 | Pricing calculator and recommendation | Live, pure module with unit tests |
 | AI advice | Live with OpenRouter, Gemini, or Groq keys; server-side route only |
 | Price Radar | Live daily PriceCatcher data (spinach, chilli, banana); seed series for padi and maize |
-| Community | Mock room list, not a live chat |
+| Community | Live chat per room via Supabase (`community_messages`) |
 | Language and currency | Live settings (en, id, ms, jv; MYR default) |
 | Demo login (phone + PIN) | Seeded accounts, no OTP |
 | Offline, environmental data, admin | Out of scope for this prototype |
@@ -157,8 +157,8 @@ components/   app shell, navigation, forms, charts, UI primitives
 i18n/         typed dictionaries (en, id, ms, jv)
 lib/          pricing, farm model/store, commodities, market, AI request, currency
 data/         seeded JSON (commodities, demo farmers, initial field)
-supabase/     SQL schema and demo RLS for farms, crops, and market prices
-docs/         brief, demo script, Javanese review list
+supabase/     SQL schema and demo RLS for farms, crops, market prices, chat
+docs/         brief, demo script, cost catalog, Javanese review list
 public/       icons and service worker
 ```
 
@@ -172,5 +172,10 @@ public/       icons and service worker
 - Javanese uses simple ngoko and needs native review. Every jv string is listed
   in `docs/jv-review.md`.
 - Market prices come from PriceCatcher when available and fall back to the seed
-  series. Each row shows its source and observation date. Community rooms are
-  sample content and are labeled in the UI.
+  series. Each row shows its source and observation date.
+- Community rooms are live chat stored in Supabase `community_messages`; the
+  app never shows sample messages. If the table is missing, the room says so and
+  points back to `supabase/schema.sql`.
+- The cost wizard suggests common direct and labour cost labels per commodity
+  from `lib/cost-catalog.ts`. It only prefills the label; the farmer enters
+  amounts. Sources and hidden-cost definitions are in `docs/cost-catalog.md`.

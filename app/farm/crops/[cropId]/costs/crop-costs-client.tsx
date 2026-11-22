@@ -9,8 +9,15 @@ import { FormError, TextField } from "@/components/form-fields";
 import { PRIMARY_BUTTON } from "@/components/button-styles";
 import {
   CostLinesEditor,
+  makeCostLine,
   type CostLineDraft,
 } from "@/components/farm/cost-lines-editor";
+import {
+  DIRECT_COST_SUGGESTIONS,
+  LABOUR_COST_SUGGESTIONS,
+  type DirectCostKey,
+  type LabourCostKey,
+} from "@/lib/cost-catalog";
 import { useFarm } from "@/lib/farm-store";
 import { HIDDEN_COST_KEYS, type HiddenCostKey } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
@@ -208,19 +215,43 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
 
       <div className="mt-5">
         {step === 0 ? (
-          <CostLinesEditor
-            lines={direct}
-            onChange={setDirect}
-            labelPlaceholder={t.farm.wizard.lineLabelPlaceholder}
-          />
+          <>
+            <CostSuggestions
+              keys={DIRECT_COST_SUGGESTIONS[crop.commodityId]}
+              lines={direct}
+              onAdd={(label) =>
+                setDirect((current) => [
+                  ...current,
+                  { ...makeCostLine(), label },
+                ])
+              }
+            />
+            <CostLinesEditor
+              lines={direct}
+              onChange={setDirect}
+              labelPlaceholder={t.farm.wizard.lineLabelPlaceholder}
+            />
+          </>
         ) : null}
 
         {step === 1 ? (
-          <CostLinesEditor
-            lines={labour}
-            onChange={setLabour}
-            labelPlaceholder={t.farm.wizard.lineLabelPlaceholder}
-          />
+          <>
+            <CostSuggestions
+              keys={LABOUR_COST_SUGGESTIONS}
+              lines={labour}
+              onAdd={(label) =>
+                setLabour((current) => [
+                  ...current,
+                  { ...makeCostLine(), label },
+                ])
+              }
+            />
+            <CostLinesEditor
+              lines={labour}
+              onChange={setLabour}
+              labelPlaceholder={t.farm.wizard.lineLabelPlaceholder}
+            />
+          </>
         ) : null}
 
         {step === 2 ? (
@@ -246,8 +277,13 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
                       onChange={() => toggleHidden(key)}
                       className="size-5 shrink-0 accent-[var(--brand)]"
                     />
-                    <span className="text-sm font-medium">
-                      {t.farm.hiddenCosts[key]}
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">
+                        {t.farm.hiddenCosts[key]}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-ink-muted">
+                        {t.farm.hiddenHints[key]}
+                      </span>
                     </span>
                   </label>
                   {selected ? (
@@ -309,6 +345,52 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
         >
           {step === TOTAL_STEPS - 1 ? t.farm.wizard.save : t.common.next}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function CostSuggestions({
+  keys,
+  lines,
+  onAdd,
+}: {
+  keys: readonly (DirectCostKey | LabourCostKey)[];
+  lines: CostLineDraft[];
+  onAdd: (label: string) => void;
+}) {
+  const { t } = useSettings();
+  const labels = new Set(
+    lines.map((line) => line.label.trim().toLowerCase()),
+  );
+  const available = keys.filter(
+    (key) => !labels.has(t.farm.costItems[key].toLowerCase()),
+  );
+
+  if (available.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+        {t.farm.wizard.suggestionTitle}
+      </p>
+      <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
+        {t.farm.wizard.suggestionHint}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {available.map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onAdd(t.farm.costItems[key])}
+            className="min-h-11 rounded-full border border-line bg-surface px-3 text-sm font-medium transition-colors hover:bg-surface-muted"
+          >
+            <span aria-hidden="true" className="mr-1 text-ink-muted">
+              +
+            </span>
+            {t.farm.costItems[key]}
+          </button>
+        ))}
       </div>
     </div>
   );

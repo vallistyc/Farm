@@ -5,8 +5,20 @@ import {
   toCropRows,
   toFarmRows,
 } from "@/lib/cloud-merge";
+import {
+  parseCommunityMessages,
+  type CommunityMessage,
+  type CommunityRoomId,
+} from "@/lib/community";
 
 export type CloudStatus = "local" | "syncing" | "synced" | "error";
+
+export class CommunityTableMissingError extends Error {
+  constructor() {
+    super("community_messages table is missing");
+    this.name = "CommunityTableMissingError";
+  }
+}
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/+$/, "") ?? "";
@@ -83,4 +95,51 @@ export async function pushFarm(
 ): Promise<void> {
   await upsertRows("farms", toFarmRows(ownerId, data.fields));
   await upsertRows("crops", toCropRows(ownerId, data.crops));
+}
+
+export async function readCommunityMessages(
+  roomId: CommunityRoomId,
+): Promise<CommunityMessage[]> {
+  const query = new URLSearchParams({
+    room_id: `eq.${roomId}`,
+    select: "id,room_id,author_id,author_name,body,created_at",
+    order: "created_at.asc",
+    limit: "200",
+  });
+  const response = await request(`community_messages?${query.toString()}`);
+  if (response.status === 404) throw new CommunityTableMissingError();
+  if (!response.ok) {
+    throw new Error(`Read community_messages failed with ${response.status}`);
+  }
+  return parseCommunityMessages(await response.json());
+}
+
+function makeMessageId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export async function sendCommunityMessage(input: {
+  roomId: CommunityRoomId;
+  authorId: string;
+  authorName: string;
+  body: string;
+}): Promise<void> {
+  const response = await request("community_messages", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      id: makeMessageId(),
+      room_id: input.roomId,
+      author_id: input.authorId,
+      author_name: input.authorName,
+      body: input.body,
+    }),
+  });
+  if (response.status === 404) throw new CommunityTableMissingError();
+  if (!response.ok) {
+    throw new Error(`Write community_messages failed with ${response.status}`);
+  }
 }

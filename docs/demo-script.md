@@ -34,6 +34,7 @@ Before the demo:
 - **Margin:** in the calculator, change margin from 10% to 20% and show the minimum price update immediately.
 - **Language:** repeat one screen in Bahasa Melayu and Basa Jawa to show the four-language dictionary.
 - **PWA:** install the app from the browser menu; the shell opens from the cache, and farm data is read from the device with a cloud copy when Supabase is configured.
+- **Community chat:** open **Community**, pick **Padi**, and send a short message. It is stored in Supabase `community_messages` and appears for every visitor of that room. If the table is missing, the room shows a retry card instead of fake messages.
 
 ## If something goes wrong
 
