@@ -11,7 +11,7 @@ Review focus:
 - Currency labels and status words (Aman, Tipis, Rugi) are clear.
 - No string is ambiguous when translated back to Indonesian.
 
-Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 296.
+Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 295.
 
 ## app
 
@@ -306,7 +306,6 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 296.
 | `radar.indonesiaCoverage` | Bapanas publishes daily prices for padi, maize, and chilli. Spinach and banana are not in this feed, so they appear only under Malaysia. | Bapanas ngetokake rega saben dina kanggo pari, jagung, lan lombok. Bayem lan gedhang ora ana ing sumber iki, dadi mung katon ing bagean Malaysia. |
 | `radar.indonesiaUnavailable` | Indonesia prices are unavailable right now. Try again in a few minutes. | Rega Indonesia durung ana saiki. Coba maneh sawetara menit. |
 | `radar.seedNote` | No official price feed for this commodity yet. Showing sample data. | Durung ana data rega resmi kanggo komoditas iki. Nampilake data conto. |
-| `radar.refreshNote` | Refreshes automatically every minute. | Dianyari otomatis saben menit. |
 
 ## ai
 

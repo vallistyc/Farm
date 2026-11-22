@@ -281,7 +281,6 @@ const jv: Dictionary = {
       "Rega Indonesia durung ana saiki. Coba maneh sawetara menit.",
     seedNote:
       "Durung ana data rega resmi kanggo komoditas iki. Nampilake data conto.",
-    refreshNote: "Dianyari otomatis saben menit.",
   },
   ai: {
     title: "Saran AI",

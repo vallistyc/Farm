@@ -280,7 +280,6 @@ const id: Dictionary = {
       "Harga Indonesia belum tersedia saat ini. Coba lagi beberapa menit lagi.",
     seedNote:
       "Belum ada data harga resmi untuk komoditas ini. Menampilkan data contoh.",
-    refreshNote: "Diperbarui otomatis tiap menit.",
   },
   ai: {
     title: "Saran AI",

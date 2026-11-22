@@ -203,10 +203,6 @@ export default function PriceRadarPage() {
           </p>
         )}
       </section>
-
-      <p className="mt-4 text-center text-[11px] text-ink-muted">
-        {t.radar.refreshNote}
-      </p>
     </div>
   );
 }

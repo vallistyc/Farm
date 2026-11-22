@@ -112,7 +112,6 @@ export function PriceRadarDetailClient({
             ariaLabel={`${t.radar.trendTitle} — ${t.commodities[commodity.id]}`}
           />
         </div>
-        <p className="mt-2 text-[11px] text-ink-muted">{t.radar.refreshNote}</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-ink-muted">
           <span className="inline-flex items-center gap-1.5">
             <span

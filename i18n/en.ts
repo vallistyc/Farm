@@ -276,7 +276,6 @@ const en = {
       "Indonesia prices are unavailable right now. Try again in a few minutes.",
     seedNote:
       "No official price feed for this commodity yet. Showing sample data.",
-    refreshNote: "Refreshes automatically every minute.",
   },
   ai: {
     title: "AI advice",

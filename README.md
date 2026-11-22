@@ -116,7 +116,9 @@ second-by-second farm-gate prices, so these update once a day.
 
 - `GET /api/market-prices` returns the current snapshot: per-commodity price,
   source (`pricecatcher` or `seed`), observation date, and a 30-day trend. The
-  client refreshes it every minute and caches the last copy for offline use.
+  client re-fetches it every minute, the server caches it for 5–10 minutes, and
+  the underlying source updates once a day; the client also keeps the last copy
+  for offline use.
 - `GET /api/cron/market-prices` downloads the current and previous monthly CSV,
   keeps only mapped item codes, takes the daily median across premises, and
   upserts into `market_prices`. `vercel.json` runs it daily at 09:15 MYT.

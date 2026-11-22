@@ -281,7 +281,6 @@ const ms: Dictionary = {
       "Harga Indonesia tidak tersedia buat masa ini. Cuba lagi beberapa minit lagi.",
     seedNote:
       "Belum ada suapan harga rasmi untuk komoditi ini. Memaparkan data contoh.",
-    refreshNote: "Dikemas kini automatik setiap minit.",
   },
   ai: {
     title: "Nasihat AI",
