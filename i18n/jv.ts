@@ -249,6 +249,7 @@ const jv: Dictionary = {
     description: "Rega pasar resmi saka Malaysia lan Indonesia.",
     malaysiaTitle: "Malaysia",
     indonesiaTitle: "Indonesia",
+    countryLabel: "Sumber rega",
     sampleNote: "Data conto kanggo demo. Ora rega pasar langsung.",
     sampleBadge: "Data conto",
     emptyTitle: "Durung ana data rega",

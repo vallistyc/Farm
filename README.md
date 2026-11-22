@@ -14,7 +14,7 @@ Brief: `docs/Brief_Document_Harga_Jual_Petani_v1.1.pdf`
 | Cost entry wizard + hidden cost checklist | Live |
 | Pricing calculator and recommendation | Live, pure module with unit tests |
 | AI advice | Live with OpenRouter, Gemini, or Groq keys; server-side route only |
-| Price Radar | Two live feeds side by side: Malaysia PriceCatcher (retail) and Indonesia Bapanas (producer). Malaysia keeps seed series for padi and maize |
+| Price Radar | Two live feeds behind a Malaysia/Indonesia segmented toggle: Malaysia PriceCatcher (retail, blue) and Indonesia Bapanas (producer, red). Malaysia keeps seed series for padi and maize |
 | Community | Live chat per room via Supabase (`community_messages`) |
 | Language and currency | Live settings (en, id, ms, jv; MYR default) |
 | Demo login (phone + PIN) | Seeded accounts, no OTP |
@@ -106,9 +106,11 @@ or deleted with the public key. Replace all of these with Supabase Auth and
 
 ## Live market prices (Malaysia + Indonesia)
 
-Price Radar shows two independent official feeds in one screen, each with its
-own source badge and observation date. No free source gives second-by-second
-farm-gate prices, so these update once a day.
+Price Radar shows two independent official feeds, switched with a
+Malaysia/Indonesia segmented control so only one list is on screen at a time.
+Each country has its own accent color (blue for Malaysia, red for Indonesia)
+and its own source badge and observation date. No free source gives
+second-by-second farm-gate prices, so these update once a day.
 
 ### Malaysia — PriceCatcher (retail)
 

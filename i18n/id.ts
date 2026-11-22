@@ -248,6 +248,7 @@ const id: Dictionary = {
     description: "Harga pasar resmi dari Malaysia dan Indonesia.",
     malaysiaTitle: "Malaysia",
     indonesiaTitle: "Indonesia",
+    countryLabel: "Sumber harga",
     sampleNote: "Data contoh untuk demo. Bukan harga pasar langsung.",
     sampleBadge: "Data contoh",
     emptyTitle: "Belum ada data harga",

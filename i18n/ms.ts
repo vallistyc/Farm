@@ -249,6 +249,7 @@ const ms: Dictionary = {
     description: "Harga pasaran rasmi dari Malaysia dan Indonesia.",
     malaysiaTitle: "Malaysia",
     indonesiaTitle: "Indonesia",
+    countryLabel: "Sumber harga",
     sampleNote: "Data contoh untuk demo. Bukan harga pasaran langsung.",
     sampleBadge: "Data contoh",
     emptyTitle: "Belum ada data harga",

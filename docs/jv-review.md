@@ -11,7 +11,7 @@ Review focus:
 - Currency labels and status words (Aman, Tipis, Rugi) are clear.
 - No string is ambiguous when translated back to Indonesian.
 
-Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 295.
+Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 296.
 
 ## app
 
@@ -279,6 +279,7 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 295.
 | `radar.description` | Official market prices from Malaysia and Indonesia. | Rega pasar resmi saka Malaysia lan Indonesia. |
 | `radar.malaysiaTitle` | Malaysia | Malaysia |
 | `radar.indonesiaTitle` | Indonesia | Indonesia |
+| `radar.countryLabel` | Price source | Sumber rega |
 | `radar.sampleNote` | Sample data for the demo. Not live market data. | Data conto kanggo demo. Ora rega pasar langsung. |
 | `radar.sampleBadge` | Sample data | Data conto |
 | `radar.emptyTitle` | No price data yet | Durung ana data rega |

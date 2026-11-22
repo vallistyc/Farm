@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PriceRadarCard } from "@/components/price-radar-card";
 import { PageHeader } from "@/components/page-header";
 import { useMarketPrices } from "@/components/market-prices";
@@ -13,11 +14,27 @@ import { formatIdr, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
 
+type Country = "malaysia" | "indonesia";
+
+const COUNTRIES: Country[] = ["malaysia", "indonesia"];
+
+const ACCENT: Record<Country, { selected: string; dot: string }> = {
+  malaysia: {
+    selected: "bg-[var(--country-my)] text-white shadow-sm",
+    dot: "bg-[var(--country-my)]",
+  },
+  indonesia: {
+    selected: "bg-[var(--country-id)] text-white shadow-sm",
+    dot: "bg-[var(--country-id)]",
+  },
+};
+
 export default function PriceRadarPage() {
   const { t, locale, currency } = useSettings();
   const snapshot = useMarketPrices();
   const localeTag = LOCALE_TAGS[locale];
   const indonesia = snapshot.indonesia;
+  const [country, setCountry] = useState<Country>("malaysia");
 
   const indonesiaRows = INDONESIA_COMMODITY_IDS.flatMap((commodityId) => {
     const quote = indonesia.quotes[commodityId];
@@ -26,13 +43,56 @@ export default function PriceRadarPage() {
     return [{ commodityId, quote, trend }];
   });
 
+  const labelFor = (value: Country) =>
+    value === "malaysia" ? t.radar.malaysiaTitle : t.radar.indonesiaTitle;
+
   return (
     <div>
       <PageHeader title={t.radar.title} description={t.radar.description} />
 
-      <section>
+      <div
+        role="group"
+        aria-label={t.radar.countryLabel}
+        className="mb-4 grid grid-cols-2 gap-1 rounded-2xl bg-surface-muted p-1"
+      >
+        {COUNTRIES.map((value) => {
+          const selected = country === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setCountry(value)}
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors ${
+                selected
+                  ? ACCENT[value].selected
+                  : "text-ink-muted hover:bg-surface"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`h-2.5 w-2.5 rounded-full ${
+                  selected ? "bg-white/80" : ACCENT[value].dot
+                }`}
+              />
+              {labelFor(value)}
+            </button>
+          );
+        })}
+      </div>
+
+      <section
+        aria-label={t.radar.malaysiaTitle}
+        hidden={country !== "malaysia"}
+      >
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold">{t.radar.malaysiaTitle}</h2>
+          <span className="flex items-center gap-1.5 text-sm font-semibold">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 rounded-full bg-[var(--country-my)]"
+            />
+            {t.radar.malaysiaTitle}
+          </span>
           {snapshot.liveCount > 0 ? (
             <span className="rounded-full bg-aman/10 px-3 py-1 text-xs font-semibold text-aman">
               {t.radar.liveBadge}
@@ -81,9 +141,18 @@ export default function PriceRadarPage() {
         </div>
       </section>
 
-      <section className="mt-6">
+      <section
+        aria-label={t.radar.indonesiaTitle}
+        hidden={country !== "indonesia"}
+      >
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold">{t.radar.indonesiaTitle}</h2>
+          <span className="flex items-center gap-1.5 text-sm font-semibold">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 rounded-full bg-[var(--country-id)]"
+            />
+            {t.radar.indonesiaTitle}
+          </span>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               indonesia.liveCount > 0

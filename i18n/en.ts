@@ -244,6 +244,7 @@ const en = {
     description: "Official market prices from Malaysia and Indonesia.",
     malaysiaTitle: "Malaysia",
     indonesiaTitle: "Indonesia",
+    countryLabel: "Price source",
     sampleNote: "Sample data for the demo. Not live market data.",
     sampleBadge: "Sample data",
     emptyTitle: "No price data yet",

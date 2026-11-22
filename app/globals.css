@@ -14,6 +14,8 @@
   --aman: #15803d;
   --tipis: #b45309;
   --rugi: #b91c1c;
+  --country-my: #1d4ed8;
+  --country-id: #ce1126;
 }
 
 @media (prefers-color-scheme: dark) {
