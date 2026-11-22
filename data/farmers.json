@@ -1,0 +1,16 @@
+[
+  {
+    "id": "farmer-ahmad",
+    "name": "Ahmad bin Ali",
+    "phone": "0123456789",
+    "pin": "1234",
+    "region": "Kedah, Malaysia"
+  },
+  {
+    "id": "farmer-siti",
+    "name": "Siti Rahayu",
+    "phone": "08123456789",
+    "pin": "4321",
+    "region": "Yogyakarta, Indonesia"
+  }
+]

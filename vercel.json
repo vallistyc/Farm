@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/market-prices",
+      "schedule": "15 1 * * *"
+    }
+  ],
+  "functions": {
+    "app/api/cron/market-prices/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "fields": [
+    {
+      "id": "field-sawah-utama",
+      "name": "Sawah Utama",
+      "sizeHa": 0.5,
+      "location": "Kedah"
+    }
+  ],
+  "crops": []
+}

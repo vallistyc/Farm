@@ -1,0 +1,176 @@
+# Harga Jual Petani (iASI 2026 prototype)
+
+Mobile-first PWA that helps smallholder farmers set a selling price from real
+costs, hidden costs, official daily market prices, and a short AI advisory.
+Competition prototype only, not for real farm data.
+
+Brief: `docs/Brief_Document_Harga_Jual_Petani_v1.1.pdf`
+
+## Status
+
+| Area | Status |
+| --- | --- |
+| Farm, fields, crops | Live logic, localStorage cache, Supabase sync when configured |
+| Cost entry wizard + hidden cost checklist | Live |
+| Pricing calculator and recommendation | Live, pure module with unit tests |
+| AI advice | Live with OpenRouter, Gemini, or Groq keys; server-side route only |
+| Price Radar | Live daily PriceCatcher data (spinach, chilli, banana); seed series for padi and maize |
+| Community | Mock room list, not a live chat |
+| Language and currency | Live settings (en, id, ms, jv; MYR default) |
+| Demo login (phone + PIN) | Seeded accounts, no OTP |
+| Offline, environmental data, admin | Out of scope for this prototype |
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000 in a mobile viewport (360px is the target).
+
+```bash
+npm test        # pricing + cloud merge unit tests (node:test)
+npm run lint
+npm run build
+npm start       # production, needed to test the service worker
+```
+
+## Demo accounts
+
+| Farmer | Phone | PIN |
+| --- | --- | --- |
+| Ahmad bin Ali | 0123456789 | 1234 |
+| Siti Rahayu | 08123456789 | 4321 |
+
+Tap an account on the login screen to fill the form.
+
+## AI advisor setup
+
+The browser calls `/api/ai-advice`; provider keys stay on the server and are
+never shipped to the client. Providers are tried in order and skipped when the
+key is empty: OpenRouter (free priority models) → Google Gemini → Groq.
+
+```bash
+cp .env.example .env.local
+# edit .env.local and set at least one provider key
+```
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | No | Tried first. Free models from `lib/ai-providers.ts` by default. |
+| `OPENROUTER_MODELS` | No | Comma-separated model IDs, tried in order. |
+| `OPENROUTER_MAX_ATTEMPTS` | No | How many OpenRouter models to try. Default 3, so the fallback stays fast. |
+| `GEMINI_API_KEY` | No | Second fallback. Default model `gemini-3.1-flash-lite`. |
+| `GEMINI_MODEL` | No | Override the Gemini model. |
+| `GROQ_API_KEY` | No | Last fallback. Default model `openai/gpt-oss-120b`. |
+| `GROQ_MODEL` | No | Override the Groq model. |
+
+Each attempt has a 15s timeout and the whole chain stops after 45s; the client
+waits up to 60s. Free models can be rate limited or temporarily overloaded, so
+one failing provider simply moves to the next. With no key configured the route
+returns 503 and the app shows a setup message. The advisor receives crop, cost,
+price, status, selected language, and display currency context; it is asked to
+stay under 120 words and to decline non-farming topics. It also receives the
+market source and observation date, so it can say whether the price is official
+retail data or a sample.
+
+## Cloud data (Supabase)
+
+Farms and crops stay in localStorage and, when Supabase is configured, are also
+copied to two tables (`farms`, `crops`) keyed by the demo account. Logging in
+pulls the cloud copy, merges it with the phone copy (the newest crop wins), then
+pushes the result. Without a connection the app keeps working locally.
+
+1. In Supabase, open the SQL editor and run `supabase/schema.sql`.
+2. Copy the project URL and anon/publishable key into `.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+
+3. Restart `npm run dev`. Profile shows the sync state (saved to cloud,
+   syncing, this phone only, or failed).
+
+The anon key is public by design, but the schema's RLS policies let any holder
+of the key read and write the demo tables. That is acceptable for fake
+competition data only. Replace them with Supabase Auth and `auth.uid()` policies
+before storing real farmer data.
+
+## Live market prices (PriceCatcher)
+
+Price Radar reads the official KPDN/DOSM **PriceCatcher** daily price files.
+No free API gives second-by-second farm-gate prices; this is the freshest
+official source for Malaysia and it updates once a day.
+
+- `GET /api/market-prices` returns the current snapshot: per-commodity price,
+  source (`pricecatcher` or `seed`), observation date, and a 30-day trend. The
+  client refreshes it every minute and caches the last copy for offline use.
+- `GET /api/cron/market-prices` downloads the current and previous monthly CSV,
+  keeps only mapped item codes, takes the daily median across premises, and
+  upserts into `market_prices`. `vercel.json` runs it daily at 09:15 MYT.
+- `GET /api/cron/market-prices?month=YYYY-MM` backfills one month. Repeat it for
+  the months you want; `market_prices` is the long horizon store (target 30
+  months) for trend and forecasting work.
+- Mapping: spinach = `BAYAM HIJAU/MERAH`, chilli = `CILI MERAH` (Kulai/Minyak),
+  banana = `PISANG BERANGAN/EMAS`. PriceCatcher has no farm-gate padi or fresh
+  maize item, so those two stay on the seed series and are labeled "sample".
+- PriceCatcher is **retail** data. It is a market reference, not the farm-gate
+  price a farmer receives; the UI and AI prompt say so. Replace or blend it with
+  FAMA wholesale data before making farm-gate claims.
+- If the download fails and no history exists, the API serves the seed series.
+  The UI always shows the source and observation date, so sample data is never
+  presented as live.
+
+Environment: the server uses the existing `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` for the `market_prices` table. Set `CRON_SECRET`
+in production so only Vercel Cron can trigger the refresh route.
+
+## Deploy to Vercel
+
+1. Push this repository to GitHub.
+2. In Vercel, add a new project and import the repository. Next.js is detected automatically.
+3. Add at least one of `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`,
+   plus `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+   `CRON_SECRET` for Production and Preview.
+4. Deploy. The Supabase tables are optional; without the two Supabase variables
+   the app runs local-only and Price Radar falls back to the seed series.
+5. Open the deployed HTTPS URL on a phone and confirm the manifest, install prompt, and service worker.
+
+Local production check: `npm run build && npm start`, then open port 3000. The
+service worker only registers in production builds.
+
+## 2-minute demo
+
+See `docs/demo-script.md` for the timed flow, exact cost numbers, and reset
+instructions. Short version: log in as Ahmad, add a padi crop, enter costs
+(including hidden ones), open the recommendation, ask the AI advisor, compare the
+official retail market with your minimum in Price Radar, then switch language and
+currency in Profile.
+
+## Structure
+
+```
+app/          routes (tabs, farm, radar, AI advice, API route, PWA manifest)
+components/   app shell, navigation, forms, charts, UI primitives
+i18n/         typed dictionaries (en, id, ms, jv)
+lib/          pricing, farm model/store, commodities, market, AI request, currency
+data/         seeded JSON (commodities, demo farmers, initial field)
+supabase/     SQL schema and demo RLS for farms, crops, and market prices
+docs/         brief, demo script, Javanese review list
+public/       icons and service worker
+```
+
+## Notes
+
+- All money is stored in MYR; the currency setting only changes display values
+  using a fixed fallback rate table.
+- Farm data lives in this browser's localStorage under `hjp.*`. Clearing site
+  data resets the local copy; when Supabase is configured, the next login pulls
+  the cloud copy again.
+- Javanese uses simple ngoko and needs native review. Every jv string is listed
+  in `docs/jv-review.md`.
+- Market prices come from PriceCatcher when available and fall back to the seed
+  series. Each row shows its source and observation date. Community rooms are
+  sample content and are labeled in the UI.
