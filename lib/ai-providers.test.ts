@@ -64,7 +64,7 @@ test("buildProviderRequest targets the right endpoint and auth header", () => {
     "system",
     "user",
   );
-  assert.match(gemini.url, /gemini-2\.5-flash:generateContent$/);
+  assert.ok(gemini.url.endsWith(`${DEFAULT_GEMINI_MODEL}:generateContent`));
   assert.equal(gemini.headers["x-goog-api-key"], "g");
   assert.equal(gemini.headers.Authorization, undefined);
 });
