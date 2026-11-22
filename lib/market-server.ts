@@ -426,15 +426,19 @@ export async function getIndonesiaSnapshot(): Promise<IndonesiaMarketSnapshot> {
   }
 
   const history = await readIndonesiaHistory().catch(() => null);
+  const historyIsFresh =
+    history !== null && history.latest >= jakartaDate(-1);
   let live: BapanasDay | null = null;
 
-  try {
-    live = await fetchBapanasLatest();
-  } catch (error) {
-    console.error(
-      "Bapanas unavailable, using stored history",
-      error instanceof Error ? error.message : "unknown",
-    );
+  if (!historyIsFresh) {
+    try {
+      live = await fetchBapanasLatest();
+    } catch (error) {
+      console.error(
+        "Bapanas unavailable, using stored history",
+        error instanceof Error ? error.message : "unknown",
+      );
+    }
   }
 
   const snapshot = buildIndonesiaSnapshot(

@@ -1,6 +1,8 @@
 import { connection, NextResponse } from "next/server";
 import { getMarketSnapshot } from "@/lib/market-server";
 
+export const maxDuration = 30;
+
 export async function GET() {
   await connection();
   const snapshot = await getMarketSnapshot();

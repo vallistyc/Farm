@@ -154,6 +154,9 @@ second-by-second farm-gate prices, so these update once a day.
 - If Bapanas or the table is unavailable, the Indonesia section falls back to
   the stored history or shows an honest "unavailable" note. It never shows
   sample data.
+- When the stored history is at most one day old, `GET /api/market-prices`
+  serves it immediately instead of calling Bapanas, so a slow or blocked
+  upstream cannot stall the whole snapshot. The cron refresh keeps it current.
 - Caveat: producer-level national reference prices, not the exact price a
   specific farmer will get at a specific market.
 
