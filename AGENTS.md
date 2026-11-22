@@ -15,27 +15,28 @@ Mobile-first PWA that helps farmers set a selling price for their harvest based 
 
 ## Scope
 Competition prototype, NOT for real users. Prioritize a polished, working demo of the core flow. Do not over-engineer.
-- Live (real logic): Cost Input, Hidden Costs Checklist, Selling Price Calculator, Recommendation, AI Advice, Fields and Crops (simple), Supabase sync for farms/crops, Price Radar from official PriceCatcher data, Community chat per room stored in Supabase
-- Seed fallback: padi and maize keep the JSON sample series because PriceCatcher has no farm-gate padi or fresh maize item; the UI labels the source per commodity
+- Live (real logic): Cost Input, Hidden Costs Checklist, Selling Price Calculator, Recommendation, AI Advice, Fields and Crops (simple), Supabase sync for farms/crops, Price Radar from official Malaysia (PriceCatcher) and Indonesia (Bapanas) data, Community chat per room stored in Supabase
+- Seed fallback: Malaysian padi and maize keep the JSON sample series because PriceCatcher has no farm-gate padi or fresh maize item; the UI labels the source per commodity
 - Static: language switch (en, id, ms, jv), currency (live free API with fallback to fixed rate table)
 - Mock or skip: Environmental Info, offline mode, admin panel
 - Auth: demo login with phone number + 4-digit PIN, seeded accounts, no OTP
 
 ## Stack
-Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service worker), daily PriceCatcher prices with JSON seed fallback, farms/crops synced to Supabase Postgres with localStorage as the offline cache, deploy target Vercel.
+Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service worker), daily Malaysia PriceCatcher and Indonesia Bapanas prices with JSON seed fallback, farms/crops synced to Supabase Postgres with localStorage as the offline cache, deploy target Vercel.
 
 ## Cloud data (Supabase)
-- `supabase/schema.sql` creates `farms` and `crops` keyed by `(owner_id, id)`, the `market_prices` history table, and `community_messages`; run it in the Supabase SQL editor.
+- `supabase/schema.sql` creates `farms` and `crops` keyed by `(owner_id, id)`, the `market_prices` and `market_prices_indonesia` history tables, and `community_messages`; run it in the Supabase SQL editor.
 - The client talks to Supabase REST with the public anon/publishable key only. Never add a service-role key to the client.
 - Sync is local-first: localStorage is the cache, login pulls then merges last-write-wins per crop by `updatedAt`, and every change is pushed debounced. No hard deletes.
-- RLS in the schema is demo-only: `farms`/`crops` stay permissive for the shared demo accounts, `market_prices` allows read plus official-row insert/update, and `community_messages` allows read plus insert only. Replace all of them with Supabase Auth plus `auth.uid()` policies before real user data.
+- RLS in the schema is demo-only: `farms`/`crops` stay permissive for the shared demo accounts, `market_prices` and `market_prices_indonesia` allow read plus official-row insert/update (the Indonesia table only accepts `source = 'bapanas'`), and `community_messages` allows read plus insert only. Replace all of them with Supabase Auth plus `auth.uid()` policies before real user data.
 
-## Market prices (PriceCatcher)
-- Source: official KPDN/DOSM PriceCatcher monthly CSV at `storage.data.gov.my`. It is daily retail data, not a real-time or farm-gate feed.
-- `lib/market.ts` is the pure layer: item mapping, CSV parsing, daily median, snapshot validation. `lib/market-server.ts` handles download, Supabase history, and fallback.
-- `GET /api/market-prices` serves the snapshot the client polls every minute. `GET /api/cron/market-prices` refreshes and stores it; `?month=YYYY-MM` backfills one month. Protect it with `CRON_SECRET` in production.
-- `market_prices` in `supabase/schema.sql` is the long-horizon store (target 30 months). It is demo RLS and must be hardened with the rest of the schema.
-- Always show the source and observation date. Never present seed data as live. PriceCatcher is retail, so state that it is a market reference, not the farm-gate price.
+## Market prices (Malaysia + Indonesia)
+- Malaysia: official KPDN/DOSM PriceCatcher monthly CSV at `storage.data.gov.my`. It is daily retail data, not a real-time or farm-gate feed.
+- Indonesia: public Bapanas `front/harga-pangan-informasi` at `level_harga_id=1` (producer level), national daily IDR price for padi, maize, and chilli. No API key. Displayed natively in IDR (`formatIdr`), never converted from MYR.
+- `lib/market.ts` is the pure layer: item mapping, CSV parsing, daily median, Bapanas parsing/merging, snapshot validation. `lib/market-server.ts` handles download, Supabase history, and fallback for both feeds.
+- `GET /api/market-prices` serves the combined snapshot the client polls every minute. `GET /api/cron/market-prices` refreshes both; `?month=YYYY-MM` backfills Malaysia, `?country=id` refreshes Indonesia (today or previous days), `?country=id&days=N` (N 1–60) backfills Indonesia. Protect it with `CRON_SECRET` in production.
+- `market_prices` (Malaysia) and `market_prices_indonesia` (Indonesia) in `supabase/schema.sql` are the long-horizon stores (target 30 months). They are demo RLS and must be hardened with the rest of the schema.
+- Always show the source and observation date. Never present seed data as live. Malaysia PriceCatcher is retail and Indonesia Bapanas is producer-level; state both as market references, not the exact farm-gate price.
 
 ## UX rules (audience: farmers with low tech literacy, slow internet)
 - One task per screen, step-by-step wizard for cost input
@@ -52,7 +53,7 @@ Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service
 - Total Cost = Direct Costs + Labour Costs + Hidden Costs
 - Cost per Unit = Total Cost / (Yield x (1 - Loss%))
 - Minimum Selling Price (MSP) = Cost per Unit x (1 + Margin), default margin 10%, editable
-- Compare MSP with Market Price from Price Radar:
+- Compare MSP with the Malaysia Market Price from Price Radar (farm money is MYR; the Indonesia Bapanas feed is a separate IDR reference and is not used in this comparison):
   - Market >= MSP x 1.10: Aman, recommend price near market
   - MSP <= Market < MSP x 1.10: Tipis, recommend price near market with warning
   - Market < MSP: Rugi, show warning and advice (hold sale, find other market, reduce cost)

@@ -30,3 +30,13 @@ export function formatMoney(
     maximumFractionDigits: currency === "IDR" ? 0 : 2,
   }).format(convertFromMyr(amountMyr, currency));
 }
+
+// Indonesian market prices are stored and shown in Rupiah. They are not
+// converted through the MYR display setting, so the source value stays exact.
+export function formatIdr(amountIdr: number, localeTag: string): string {
+  return new Intl.NumberFormat(localeTag, {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amountIdr);
+}

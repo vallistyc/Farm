@@ -241,12 +241,15 @@ const en = {
   },
   radar: {
     title: "Price Radar",
-    description: "Market prices and 30-day trends for your commodities.",
+    description: "Official market prices from Malaysia and Indonesia.",
+    malaysiaTitle: "Malaysia",
+    indonesiaTitle: "Indonesia",
     sampleNote: "Sample data for the demo. Not live market data.",
     sampleBadge: "Sample data",
     emptyTitle: "No price data yet",
     emptyDescription: "Commodity prices and trends will be listed here.",
     change7d: "7-day change",
+    change1d: "since yesterday",
     trendTitle: "30-day trend",
     marketNow: "Current market",
     yourMinimum: "Your minimum (MSP)",
@@ -261,7 +264,15 @@ const en = {
     legendPrice: "Market price",
     legendMsp: "Your minimum",
     liveBadge: "Official data",
+    producerPrice: "Producer price",
+    unavailableBadge: "Not available",
     liveNote: "Source: PriceCatcher (KPDN, retail) · observed {date}",
+    indonesiaNote:
+      "Source: Panel Harga Bapanas (producer) · observed {date} · shown in Rupiah",
+    indonesiaCoverage:
+      "Bapanas publishes daily prices for padi, maize, and chilli. Spinach and banana are not in this feed, so they appear only under Malaysia.",
+    indonesiaUnavailable:
+      "Indonesia prices are unavailable right now. Try again in a few minutes.",
     seedNote:
       "No official price feed for this commodity yet. Showing sample data.",
     refreshNote: "Refreshes automatically every minute.",

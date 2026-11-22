@@ -11,7 +11,7 @@ Review focus:
 - Currency labels and status words (Aman, Tipis, Rugi) are clear.
 - No string is ambiguous when translated back to Indonesian.
 
-Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 287.
+Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 295.
 
 ## app
 
@@ -276,12 +276,15 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 287.
 | Key | English | Basa Jawa |
 | --- | --- | --- |
 | `radar.title` | Price Radar | Radar Rega |
-| `radar.description` | Market prices and 30-day trends for your commodities. | Rega pasar lan tren 30 dina kanggo komoditasmu. |
+| `radar.description` | Official market prices from Malaysia and Indonesia. | Rega pasar resmi saka Malaysia lan Indonesia. |
+| `radar.malaysiaTitle` | Malaysia | Malaysia |
+| `radar.indonesiaTitle` | Indonesia | Indonesia |
 | `radar.sampleNote` | Sample data for the demo. Not live market data. | Data conto kanggo demo. Ora rega pasar langsung. |
 | `radar.sampleBadge` | Sample data | Data conto |
 | `radar.emptyTitle` | No price data yet | Durung ana data rega |
 | `radar.emptyDescription` | Commodity prices and trends will be listed here. | Rega lan tren komoditas bakal katon ing kene. |
 | `radar.change7d` | 7-day change | Owahan 7 dina |
+| `radar.change1d` | since yesterday | wiwit wingi |
 | `radar.trendTitle` | 30-day trend | Tren 30 dina |
 | `radar.marketNow` | Current market | Rega pasar saiki |
 | `radar.yourMinimum` | Your minimum (MSP) | Minimalmu (MSP) |
@@ -295,7 +298,12 @@ Generated from i18n/en.ts and i18n/jv.ts on 2026-11-22. Keys: 287.
 | `radar.legendPrice` | Market price | Rega pasar |
 | `radar.legendMsp` | Your minimum | Minimalmu |
 | `radar.liveBadge` | Official data | Data resmi |
+| `radar.producerPrice` | Producer price | Rega produsen |
+| `radar.unavailableBadge` | Not available | Durung ana |
 | `radar.liveNote` | Source: PriceCatcher (KPDN, retail) · observed {date} | Sumber: PriceCatcher (KPDN, retail) · diamati {date} |
+| `radar.indonesiaNote` | Source: Panel Harga Bapanas (producer) · observed {date} · shown in Rupiah | Sumber: Panel Harga Bapanas (produsen) · diamati {date} · ditampilake ing Rupiah |
+| `radar.indonesiaCoverage` | Bapanas publishes daily prices for padi, maize, and chilli. Spinach and banana are not in this feed, so they appear only under Malaysia. | Bapanas ngetokake rega saben dina kanggo pari, jagung, lan lombok. Bayem lan gedhang ora ana ing sumber iki, dadi mung katon ing bagean Malaysia. |
+| `radar.indonesiaUnavailable` | Indonesia prices are unavailable right now. Try again in a few minutes. | Rega Indonesia durung ana saiki. Coba maneh sawetara menit. |
 | `radar.seedNote` | No official price feed for this commodity yet. Showing sample data. | Durung ana data rega resmi kanggo komoditas iki. Nampilake data conto. |
 | `radar.refreshNote` | Refreshes automatically every minute. | Dianyari otomatis saben menit. |
 

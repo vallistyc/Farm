@@ -14,7 +14,7 @@ Brief: `docs/Brief_Document_Harga_Jual_Petani_v1.1.pdf`
 | Cost entry wizard + hidden cost checklist | Live |
 | Pricing calculator and recommendation | Live, pure module with unit tests |
 | AI advice | Live with OpenRouter, Gemini, or Groq keys; server-side route only |
-| Price Radar | Live daily PriceCatcher data (spinach, chilli, banana); seed series for padi and maize |
+| Price Radar | Two live feeds side by side: Malaysia PriceCatcher (retail) and Indonesia Bapanas (producer). Malaysia keeps seed series for padi and maize |
 | Community | Live chat per room via Supabase (`community_messages`) |
 | Language and currency | Live settings (en, id, ms, jv; MYR default) |
 | Demo login (phone + PIN) | Seeded accounts, no OTP |
@@ -81,8 +81,9 @@ Farms and crops stay in localStorage and, when Supabase is configured, are also
 copied to two tables (`farms`, `crops`) keyed by the demo account. Logging in
 pulls the cloud copy, merges it with the phone copy (the newest crop wins), then
 pushes the result. Without a connection the app keeps working locally. Community
-chat uses the same project (`community_messages`), and the cron route stores
-PriceCatcher history in `market_prices`.
+chat uses the same project (`community_messages`). The cron route stores
+PriceCatcher history in `market_prices` (Malaysia) and Bapanas history in
+`market_prices_indonesia` (Indonesia).
 
 1. In Supabase, open the SQL editor and run `supabase/schema.sql`.
 2. Copy the project URL and anon/publishable key into `.env.local`:
@@ -96,16 +97,20 @@ PriceCatcher history in `market_prices`.
    syncing, this phone only, or failed).
 
 The anon key is public by design. `farms` and `crops` keep permissive demo
-policies; `market_prices` allows read plus insert/update of official rows; and
-`community_messages` allows read plus insert only, so messages cannot be edited
+policies; `market_prices` and `market_prices_indonesia` allow read plus
+insert/update of official rows (the Indonesia table only accepts
+`source = 'bapanas'`); and `community_messages` allows read plus insert only, so
+messages cannot be edited
 or deleted with the public key. Replace all of these with Supabase Auth and
 `auth.uid()` policies before storing private farmer data.
 
-## Live market prices (PriceCatcher)
+## Live market prices (Malaysia + Indonesia)
 
-Price Radar reads the official KPDN/DOSM **PriceCatcher** daily price files.
-No free API gives second-by-second farm-gate prices; this is the freshest
-official source for Malaysia and it updates once a day.
+Price Radar shows two independent official feeds in one screen, each with its
+own source badge and observation date. No free source gives second-by-second
+farm-gate prices, so these update once a day.
+
+### Malaysia — PriceCatcher (retail)
 
 - `GET /api/market-prices` returns the current snapshot: per-commodity price,
   source (`pricecatcher` or `seed`), observation date, and a 30-day trend. The
@@ -126,9 +131,31 @@ official source for Malaysia and it updates once a day.
   The UI always shows the source and observation date, so sample data is never
   presented as live.
 
+### Indonesia — Bapanas Panel Harga (producer)
+
+- Source: the public Bapanas endpoint
+  `api-panelhargav2.badanpangan.go.id/api/front/harga-pangan-informasi` at
+  `level_harga_id=1` (producer level), national daily price in IDR. It needs no
+  API key. Covered commodities: padi, maize, and red chilli; spinach and banana
+  are not in this feed, so they only appear in the Malaysia section.
+- Prices are shown **natively in IDR** (`formatIdr`); unlike the farm's own MYR
+  money they are not converted. The card labels the source "Harga produsen"
+  (producer price) and the change "sejak kemarin" (vs yesterday).
+- `GET /api/cron/market-prices?country=id` fetches today (falling back to the
+  previous one or two days) and upserts into `market_prices_indonesia`.
+- `GET /api/cron/market-prices?country=id&days=N` (N = 1–60) backfills N days.
+- The default cron (`GET /api/cron/market-prices`) refreshes Malaysia and
+  Indonesia in parallel; an Indonesia failure is logged and does not block the
+  Malaysia refresh.
+- If Bapanas or the table is unavailable, the Indonesia section falls back to
+  the stored history or shows an honest "unavailable" note. It never shows
+  sample data.
+- Caveat: producer-level national reference prices, not the exact price a
+  specific farmer will get at a specific market.
+
 Environment: the server uses the existing `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` for the `market_prices` table. Set `CRON_SECRET`
-in production so only Vercel Cron can trigger the refresh route.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` for both market tables. Set `CRON_SECRET` in
+production so only Vercel Cron can trigger the refresh route.
 
 ## Deploy to Vercel
 
@@ -138,7 +165,8 @@ in production so only Vercel Cron can trigger the refresh route.
    plus `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
    `CRON_SECRET` for Production and Preview.
 4. Deploy. The Supabase tables are optional; without the two Supabase variables
-   the app runs local-only and Price Radar falls back to the seed series.
+   the app runs local-only, Malaysia falls back to the seed series, and the
+   Indonesia section shows its unavailable note.
 5. Open the deployed HTTPS URL on a phone and confirm the manifest, install prompt, and service worker.
 
 Local production check: `npm run build && npm start`, then open port 3000. The
@@ -149,8 +177,8 @@ service worker only registers in production builds.
 See `docs/demo-script.md` for the timed flow, exact cost numbers, and reset
 instructions. Short version: log in as Ahmad, add a padi crop, enter costs
 (including hidden ones), open the recommendation, ask the AI advisor, compare the
-official retail market with your minimum in Price Radar, then switch language and
-currency in Profile.
+official Malaysia retail and Indonesia producer prices with your minimum in
+Price Radar, then switch language and currency in Profile.
 
 ## Structure
 
@@ -160,7 +188,7 @@ components/   app shell, navigation, forms, charts, UI primitives
 i18n/         typed dictionaries (en, id, ms, jv)
 lib/          pricing, farm model/store, commodities, market, AI request, currency
 data/         seeded JSON (commodities, demo farmers, initial field)
-supabase/     SQL schema and demo RLS for farms, crops, market prices, chat
+supabase/     SQL schema and demo RLS for farms, crops, market prices (MY/ID), chat
 docs/         brief, demo script, cost catalog, Javanese review list
 public/       icons and service worker
 ```
@@ -174,8 +202,10 @@ public/       icons and service worker
   the cloud copy again.
 - Javanese uses simple ngoko and needs native review. Every jv string is listed
   in `docs/jv-review.md`.
-- Market prices come from PriceCatcher when available and fall back to the seed
-  series. Each row shows its source and observation date.
+- Malaysia prices come from PriceCatcher when available and fall back to the
+  seed series. Indonesia prices come from Bapanas and are shown in IDR; when it
+  is unavailable the section says so instead of showing sample data. Each row
+  shows its source and observation date.
 - Community rooms are live chat stored in Supabase `community_messages`; the
   app never shows sample messages. If the table is missing, the room says so and
   points back to `supabase/schema.sql`.

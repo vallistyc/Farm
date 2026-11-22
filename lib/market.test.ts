@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   aggregateTrends,
+  buildIndonesiaSnapshot,
   buildSnapshot,
   median,
+  parseBapanasInformasi,
   parseMarketSnapshot,
   parsePriceCatcherCsv,
   valueChangePercent,
@@ -135,4 +137,154 @@ test("parseMarketSnapshot rejects malformed payloads", () => {
   >;
   delete (missing.quotes as Record<string, unknown>).maize;
   assert.equal(parseMarketSnapshot(missing), null);
+});
+
+const BAPANAS = {
+  status: "success",
+  data: [
+    {
+      id: 2,
+      name: "GKP Tingkat Petani",
+      today: 7292,
+      yesterday: 7289,
+      yesterday_date: "21-11-2026",
+    },
+    {
+      id: 7,
+      name: "Jagung Pipilan Kering",
+      today: 6109,
+      yesterday: 6144,
+      yesterday_date: "21-11-2026",
+    },
+    {
+      id: 10,
+      name: "Cabai Merah Keriting",
+      today: 52575,
+      yesterday: 52718,
+      yesterday_date: "21-11-2026",
+    },
+    { id: 999, name: "Not tracked", today: 1234, yesterday: 1200 },
+  ],
+};
+
+test("parseBapanasInformasi maps producer items and dates", () => {
+  const day = parseBapanasInformasi(BAPANAS, "2026-11-22");
+  assert.ok(day);
+  assert.equal(day.observedAt, "2026-11-22");
+  assert.equal(day.previousDate, "2026-11-21");
+  assert.deepEqual(day.quotes, { padi: 7292, maize: 6109, chilli: 52575 });
+  assert.deepEqual(day.previous, { padi: 7289, maize: 6144, chilli: 52718 });
+});
+
+test("parseBapanasInformasi rejects days without prices", () => {
+  assert.equal(parseBapanasInformasi({ status: "error" }, "2026-11-22"), null);
+  assert.equal(
+    parseBapanasInformasi({ status: "success", data: [] }, "2026-11-22"),
+    null,
+  );
+  assert.equal(
+    parseBapanasInformasi(
+      {
+        status: "success",
+        data: [
+          {
+            id: 2,
+            today: 0,
+            yesterday: 7289,
+            yesterday_date: "21-11-2026",
+          },
+        ],
+      },
+      "2026-11-22",
+    ),
+    null,
+  );
+});
+
+test("buildIndonesiaSnapshot seeds a two-point trend from today and yesterday", () => {
+  const day = parseBapanasInformasi(BAPANAS, "2026-11-22");
+  assert.ok(day);
+  const snapshot = buildIndonesiaSnapshot({}, day, "2026-11-22T00:00:00.000Z");
+
+  assert.equal(snapshot.liveCount, 3);
+  assert.equal(snapshot.observedAt, "2026-11-22");
+  assert.equal(snapshot.quotes.padi?.priceIdr, 7292);
+  assert.deepEqual(snapshot.trends.padi, {
+    start: "2026-11-21",
+    end: "2026-11-22",
+    dates: ["2026-11-21", "2026-11-22"],
+    values: [7289, 7292],
+  });
+});
+
+test("buildIndonesiaSnapshot merges live data into stored history", () => {
+  const day = parseBapanasInformasi(BAPANAS, "2026-11-22");
+  assert.ok(day);
+  const history = {
+    chilli: {
+      start: "2026-11-20",
+      end: "2026-11-21",
+      dates: ["2026-11-20", "2026-11-21"],
+      values: [50000, 52718],
+    },
+  };
+
+  const snapshot = buildIndonesiaSnapshot(
+    history,
+    day,
+    "2026-11-22T00:00:00.000Z",
+  );
+
+  assert.deepEqual(snapshot.trends.chilli?.values, [50000, 52718, 52575]);
+  assert.equal(snapshot.trends.chilli?.end, "2026-11-22");
+  assert.equal(snapshot.trends.padi?.values.length, 2);
+});
+
+test("buildIndonesiaSnapshot replaces a same-day quote", () => {
+  const day = parseBapanasInformasi(BAPANAS, "2026-11-22");
+  assert.ok(day);
+  const history = {
+    padi: {
+      start: "2026-11-21",
+      end: "2026-11-22",
+      dates: ["2026-11-21", "2026-11-22"],
+      values: [7289, 7000],
+    },
+  };
+
+  const snapshot = buildIndonesiaSnapshot(
+    history,
+    day,
+    "2026-11-22T00:00:00.000Z",
+  );
+
+  assert.deepEqual(snapshot.trends.padi?.values, [7289, 7292]);
+});
+
+test("parseMarketSnapshot accepts old caches without Indonesia data", () => {
+  const legacy = structuredClone(SEED_SNAPSHOT) as unknown as Record<
+    string,
+    unknown
+  >;
+  delete legacy.indonesia;
+
+  const parsed = parseMarketSnapshot(legacy);
+  assert.ok(parsed);
+  assert.equal(parsed.indonesia.liveCount, 0);
+  assert.equal(parsed.indonesia.observedAt, "");
+});
+
+test("parseMarketSnapshot round-trips Indonesia data", () => {
+  const day = parseBapanasInformasi(BAPANAS, "2026-11-22");
+  assert.ok(day);
+  const indonesia = buildIndonesiaSnapshot(
+    {},
+    day,
+    "2026-11-22T00:00:00.000Z",
+  );
+
+  const parsed = parseMarketSnapshot({ ...SEED_SNAPSHOT, indonesia });
+  assert.ok(parsed);
+  assert.equal(parsed.indonesia.quotes.chilli?.priceIdr, 52575);
+  assert.equal(parsed.indonesia.trends.padi?.values.length, 2);
 });

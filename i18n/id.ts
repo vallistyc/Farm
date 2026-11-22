@@ -245,12 +245,15 @@ const id: Dictionary = {
   },
   radar: {
     title: "Radar Harga",
-    description: "Harga pasar dan tren 30 hari untuk komoditasmu.",
+    description: "Harga pasar resmi dari Malaysia dan Indonesia.",
+    malaysiaTitle: "Malaysia",
+    indonesiaTitle: "Indonesia",
     sampleNote: "Data contoh untuk demo. Bukan harga pasar langsung.",
     sampleBadge: "Data contoh",
     emptyTitle: "Belum ada data harga",
     emptyDescription: "Harga dan tren komoditas akan tampil di sini.",
     change7d: "Perubahan 7 hari",
+    change1d: "sejak kemarin",
     trendTitle: "Tren 30 hari",
     marketNow: "Harga pasar saat ini",
     yourMinimum: "Minimummu (MSP)",
@@ -265,7 +268,15 @@ const id: Dictionary = {
     legendPrice: "Harga pasar",
     legendMsp: "Minimummu",
     liveBadge: "Data resmi",
+    producerPrice: "Harga produsen",
+    unavailableBadge: "Belum tersedia",
     liveNote: "Sumber: PriceCatcher (KPDN, retail) · diamati {date}",
+    indonesiaNote:
+      "Sumber: Panel Harga Bapanas (produsen) · diamati {date} · ditampilkan dalam Rupiah",
+    indonesiaCoverage:
+      "Bapanas menerbitkan harga harian untuk padi, jagung, dan cabai. Bayam dan pisang tidak ada di sumber ini, jadi hanya tampil di bagian Malaysia.",
+    indonesiaUnavailable:
+      "Harga Indonesia belum tersedia saat ini. Coba lagi beberapa menit lagi.",
     seedNote:
       "Belum ada data harga resmi untuk komoditas ini. Menampilkan data contoh.",
     refreshNote: "Diperbarui otomatis tiap menit.",

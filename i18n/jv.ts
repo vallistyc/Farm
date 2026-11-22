@@ -246,12 +246,15 @@ const jv: Dictionary = {
   },
   radar: {
     title: "Radar Rega",
-    description: "Rega pasar lan tren 30 dina kanggo komoditasmu.",
+    description: "Rega pasar resmi saka Malaysia lan Indonesia.",
+    malaysiaTitle: "Malaysia",
+    indonesiaTitle: "Indonesia",
     sampleNote: "Data conto kanggo demo. Ora rega pasar langsung.",
     sampleBadge: "Data conto",
     emptyTitle: "Durung ana data rega",
     emptyDescription: "Rega lan tren komoditas bakal katon ing kene.",
     change7d: "Owahan 7 dina",
+    change1d: "wiwit wingi",
     trendTitle: "Tren 30 dina",
     marketNow: "Rega pasar saiki",
     yourMinimum: "Minimalmu (MSP)",
@@ -266,7 +269,15 @@ const jv: Dictionary = {
     legendPrice: "Rega pasar",
     legendMsp: "Minimalmu",
     liveBadge: "Data resmi",
+    producerPrice: "Rega produsen",
+    unavailableBadge: "Durung ana",
     liveNote: "Sumber: PriceCatcher (KPDN, retail) · diamati {date}",
+    indonesiaNote:
+      "Sumber: Panel Harga Bapanas (produsen) · diamati {date} · ditampilake ing Rupiah",
+    indonesiaCoverage:
+      "Bapanas ngetokake rega saben dina kanggo pari, jagung, lan lombok. Bayem lan gedhang ora ana ing sumber iki, dadi mung katon ing bagean Malaysia.",
+    indonesiaUnavailable:
+      "Rega Indonesia durung ana saiki. Coba maneh sawetara menit.",
     seedNote:
       "Durung ana data rega resmi kanggo komoditas iki. Nampilake data conto.",
     refreshNote: "Dianyari otomatis saben menit.",

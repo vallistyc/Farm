@@ -8,7 +8,7 @@ Before the demo:
 - Use a private window or clear site data so the farm starts with only the seeded field.
 - Set at least one of `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, or `GROQ_API_KEY` on the server if you want a live AI answer. Without any, the app shows a clear setup message instead of failing.
 - Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` after running `supabase/schema.sql` if you want cloud sync. Without them the app stays local-only and Profile says "Hanya di HP ini".
-- Market prices come from the official daily PriceCatcher feed for spinach, chilli, and banana; padi and maize show the sample series and are labeled "Data contoh".
+- Market prices show two official feeds: Malaysia PriceCatcher (retail) for spinach, chilli, and banana, with padi and maize on the labeled sample series; and Indonesia Bapanas (producer) for padi, maize, and chilli in IDR. The Indonesia feed needs no key; run `GET /api/cron/market-prices?country=id&days=30` once to fill its 30-day trend.
 
 ## Flow (about 2 minutes)
 
@@ -24,7 +24,7 @@ Before the demo:
 | 1:00 | Crop detail | Show total cost, cost per kg, and the suggested price. Tap **See price recommendation**. |
 | 1:05 | Recommendation | Status is **Loss (Rugi)** in red: the minimum price is about MYR 4.99 while the sample market is MYR 2.64. Read the three short tips. |
 | 1:15 | AI advice | Tap **Ask AI for advice**. Show the crop context card, tap "Should I sell now?", and let the advisor answer in the selected language. |
-| 1:35 | Price Radar | Open **Rice / Padi**: the 30-day trend and the dashed **your minimum** line sit above the market price. Point out the **Sample data** badge on padi/maize, then open **Chilli** to show **Official data** from PriceCatcher with its observation date. |
+| 1:35 | Price Radar | Open **Rice / Padi**: the 30-day trend and the dashed **your minimum** line sit above the market price. Point out the **Sample data** badge on padi/maize, then open **Chilli** to show **Official data** from PriceCatcher with its observation date. Scroll to the **Indonesia** section: three producer-price cards in IDR (padi, maize, red chilli) with their own Bapanas date and "sejak kemarin" change. |
 | 1:45 | Profile | Point at the data status ("Tersimpan di internet" when Supabase is set up). Switch language to **Basa Jawa** (or English). Show the localized Home and mention the AI replies in that language. Switch currency to IDR to show display-only conversion. |
 | 1:55 | Home | Close on the quick actions and floating AI button. |
 
@@ -34,6 +34,7 @@ Before the demo:
 - **Margin:** in the calculator, change margin from 10% to 20% and show the minimum price update immediately.
 - **Language:** repeat one screen in Bahasa Melayu and Basa Jawa to show the four-language dictionary.
 - **PWA:** install the app from the browser menu; the shell opens from the cache, and farm data is read from the device with a cloud copy when Supabase is configured.
+- **Dual-country Radar:** scroll the Price Radar page to compare Malaysia retail and Indonesia producer prices side by side. Each card shows its own source and date, and the Indonesia prices stay in IDR.
 - **Community chat:** open **Community**, pick **Padi**, and send a short message. It is stored in Supabase `community_messages` and appears for every visitor of that room. If the table is missing, the room shows a retry card instead of fake messages.
 
 ## If something goes wrong

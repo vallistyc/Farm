@@ -34,6 +34,59 @@ export type MarketSnapshot = {
   liveCount: number;
   quotes: Record<MarketCommodityId, MarketQuote>;
   trends: Record<MarketCommodityId, MarketTrend>;
+  indonesia: IndonesiaMarketSnapshot;
+};
+
+export type IndonesiaCommodityId = "padi" | "maize" | "chilli";
+
+export const INDONESIA_COMMODITY_IDS: IndonesiaCommodityId[] = [
+  "padi",
+  "maize",
+  "chilli",
+];
+
+// Bapanas Panel Harga commodity ids at level_harga_id=1 (producer level).
+// https://panelharga.badanpangan.go.id
+export const BAPANAS_PRODUCER_ITEMS: Record<IndonesiaCommodityId, number> = {
+  padi: 2,
+  maize: 7,
+  chilli: 10,
+};
+
+const BAPANAS_ITEM_TO_COMMODITY = new Map<number, IndonesiaCommodityId>(
+  Object.entries(BAPANAS_PRODUCER_ITEMS).map(([id, item]) => [
+    item,
+    id as IndonesiaCommodityId,
+  ]),
+);
+
+export type IndonesiaQuote = {
+  priceIdr: number;
+  observedAt: string;
+  source: "bapanas";
+};
+
+export type IndonesiaMarketSnapshot = {
+  fetchedAt: string;
+  observedAt: string;
+  liveCount: number;
+  quotes: Partial<Record<IndonesiaCommodityId, IndonesiaQuote>>;
+  trends: Partial<Record<IndonesiaCommodityId, MarketTrend>>;
+};
+
+export const EMPTY_INDONESIA_SNAPSHOT: IndonesiaMarketSnapshot = {
+  fetchedAt: "",
+  observedAt: "",
+  liveCount: 0,
+  quotes: {},
+  trends: {},
+};
+
+export type BapanasDay = {
+  observedAt: string;
+  previousDate: string;
+  quotes: Partial<Record<IndonesiaCommodityId, number>>;
+  previous: Partial<Record<IndonesiaCommodityId, number>>;
 };
 
 export type SeedCommodity = {
@@ -177,6 +230,7 @@ export function buildSnapshot(
   pricecatcher: Partial<Record<MarketCommodityId, MarketTrend>>,
   fetchedAt: string,
   seed: readonly SeedCommodity[],
+  indonesia: IndonesiaMarketSnapshot = EMPTY_INDONESIA_SNAPSHOT,
 ): MarketSnapshot {
   const quotes = {} as Record<MarketCommodityId, MarketQuote>;
   const trends = {} as Record<MarketCommodityId, MarketTrend>;
@@ -208,7 +262,7 @@ export function buildSnapshot(
     }
   }
 
-  return { fetchedAt, observedAt, liveCount, quotes, trends };
+  return { fetchedAt, observedAt, liveCount, quotes, trends, indonesia };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -234,6 +288,199 @@ function parseTrend(value: unknown): MarketTrend | null {
     return null;
   }
   return { start, end, dates: dates as string[], values: values as number[] };
+}
+
+function parseDdMmYyyy(value: string): string {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  if (!match) return "";
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+export function parseBapanasInformasi(
+  raw: unknown,
+  requestedDate: string,
+): BapanasDay | null {
+  if (!isRecord(raw) || raw.status !== "success" || !Array.isArray(raw.data)) {
+    return null;
+  }
+
+  const quotes: Partial<Record<IndonesiaCommodityId, number>> = {};
+  const previous: Partial<Record<IndonesiaCommodityId, number>> = {};
+  let previousDate = "";
+
+  for (const row of raw.data as unknown[]) {
+    if (!isRecord(row)) continue;
+
+    const itemId = typeof row.id === "number" ? row.id : Number(row.id);
+    const commodityId = BAPANAS_ITEM_TO_COMMODITY.get(itemId);
+    if (!commodityId) continue;
+
+    const today =
+      typeof row.today === "number" ? row.today : Number(row.today);
+    if (Number.isFinite(today) && today > 0) {
+      quotes[commodityId] = today;
+    }
+
+    const yesterday =
+      typeof row.yesterday === "number" ? row.yesterday : Number(row.yesterday);
+    if (Number.isFinite(yesterday) && yesterday > 0) {
+      previous[commodityId] = yesterday;
+    }
+
+    if (typeof row.yesterday_date === "string" && !previousDate) {
+      previousDate = parseDdMmYyyy(row.yesterday_date);
+    }
+  }
+
+  if (Object.keys(quotes).length === 0) return null;
+  return { observedAt: requestedDate, previousDate, quotes, previous };
+}
+
+function trimTrend(trend: MarketTrend, windowDays = 30): MarketTrend {
+  if (trend.dates.length <= windowDays) return trend;
+  return {
+    start: trend.dates[trend.dates.length - windowDays] ?? trend.start,
+    end: trend.end,
+    dates: trend.dates.slice(-windowDays),
+    values: trend.values.slice(-windowDays),
+  };
+}
+
+export function buildIndonesiaSnapshot(
+  history: Partial<Record<IndonesiaCommodityId, MarketTrend>>,
+  live: BapanasDay | null,
+  fetchedAt: string,
+): IndonesiaMarketSnapshot {
+  const trends: Partial<Record<IndonesiaCommodityId, MarketTrend>> = {};
+  const commodityIds = new Set<IndonesiaCommodityId>([
+    ...INDONESIA_COMMODITY_IDS,
+    ...(Object.keys(history) as IndonesiaCommodityId[]),
+  ]);
+
+  for (const commodityId of commodityIds) {
+    const base = history[commodityId];
+    const dates = base ? [...base.dates] : [];
+    const values = base ? [...base.values] : [];
+    const liveValue = live?.quotes[commodityId];
+
+    if (live && liveValue !== undefined && liveValue > 0) {
+      const lastDate = dates[dates.length - 1];
+
+      if (lastDate === live.observedAt) {
+        values[values.length - 1] = liveValue;
+      } else if (!lastDate || live.observedAt > lastDate) {
+        if (dates.length === 0) {
+          const prior = live.previous[commodityId];
+          if (
+            prior !== undefined &&
+            prior > 0 &&
+            live.previousDate &&
+            live.previousDate < live.observedAt
+          ) {
+            dates.push(live.previousDate);
+            values.push(prior);
+          }
+        }
+        dates.push(live.observedAt);
+        values.push(liveValue);
+      }
+    }
+
+    if (values.length === 0) continue;
+
+    trends[commodityId] = trimTrend({
+      start: dates[0] ?? live?.observedAt ?? "",
+      end: dates[dates.length - 1] ?? live?.observedAt ?? "",
+      dates,
+      values,
+    });
+  }
+
+  const quotes: Partial<Record<IndonesiaCommodityId, IndonesiaQuote>> = {};
+  let observedAt = "";
+
+  for (const commodityId of INDONESIA_COMMODITY_IDS) {
+    const trend = trends[commodityId];
+    if (!trend) continue;
+
+    const priceIdr = trend.values[trend.values.length - 1];
+    if (!Number.isFinite(priceIdr) || priceIdr <= 0) continue;
+
+    quotes[commodityId] = {
+      priceIdr,
+      observedAt: trend.end,
+      source: "bapanas",
+    };
+    if (trend.end > observedAt) observedAt = trend.end;
+  }
+
+  return {
+    fetchedAt,
+    observedAt,
+    liveCount: Object.keys(quotes).length,
+    quotes,
+    trends,
+  };
+}
+
+function isIndonesiaSource(value: unknown): value is "bapanas" {
+  return value === "bapanas";
+}
+
+export function parseIndonesiaSnapshot(
+  raw: unknown,
+): IndonesiaMarketSnapshot | null {
+  if (!isRecord(raw)) return null;
+  if (typeof raw.fetchedAt !== "string") return null;
+  if (typeof raw.observedAt !== "string") return null;
+  if (typeof raw.liveCount !== "number") return null;
+  if (!isRecord(raw.quotes) || !isRecord(raw.trends)) return null;
+
+  const quotes: Partial<Record<IndonesiaCommodityId, IndonesiaQuote>> = {};
+  const trends: Partial<Record<IndonesiaCommodityId, MarketTrend>> = {};
+
+  for (const commodityId of INDONESIA_COMMODITY_IDS) {
+    const quote = raw.quotes[commodityId];
+    const trendRaw = raw.trends[commodityId];
+
+    if (quote !== undefined) {
+      if (!isRecord(quote)) return null;
+      if (
+        typeof quote.priceIdr !== "number" ||
+        !Number.isFinite(quote.priceIdr) ||
+        quote.priceIdr <= 0
+      ) {
+        return null;
+      }
+      if (
+        typeof quote.observedAt !== "string" ||
+        !isIndonesiaSource(quote.source)
+      ) {
+        return null;
+      }
+      if (trendRaw === undefined) return null;
+
+      quotes[commodityId] = {
+        priceIdr: quote.priceIdr,
+        observedAt: quote.observedAt,
+        source: "bapanas",
+      };
+    }
+
+    if (trendRaw !== undefined) {
+      const trend = parseTrend(trendRaw);
+      if (!trend) return null;
+      trends[commodityId] = trend;
+    }
+  }
+
+  return {
+    fetchedAt: raw.fetchedAt,
+    observedAt: raw.observedAt,
+    liveCount: raw.liveCount,
+    quotes,
+    trends,
+  };
 }
 
 export function parseMarketSnapshot(raw: unknown): MarketSnapshot | null {
@@ -271,11 +518,18 @@ export function parseMarketSnapshot(raw: unknown): MarketSnapshot | null {
     trends[commodityId] = trend;
   }
 
+  const indonesia =
+    raw.indonesia === undefined
+      ? EMPTY_INDONESIA_SNAPSHOT
+      : parseIndonesiaSnapshot(raw.indonesia);
+  if (!indonesia) return null;
+
   return {
     fetchedAt: raw.fetchedAt,
     observedAt: raw.observedAt,
     liveCount: raw.liveCount,
     quotes,
     trends,
+    indonesia,
   };
 }

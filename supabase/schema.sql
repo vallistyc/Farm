@@ -97,6 +97,51 @@ create policy "market prices update"
   using (source = 'pricecatcher')
   with check (source = 'pricecatcher');
 
+-- Daily producer prices from Indonesia's Bapanas Panel Harga. This stays in a
+-- separate table because the source, currency (IDR), and commodity coverage
+-- differ from PriceCatcher. Bapanas only publishes padi, maize, and chilli from
+-- the app's commodity list.
+create table if not exists public.market_prices_indonesia (
+  commodity_id text not null,
+  observed_on date not null,
+  price_idr numeric not null check (price_idr > 0),
+  source text not null default 'bapanas',
+  fetched_at timestamptz not null default now(),
+  primary key (commodity_id, observed_on)
+);
+
+create index if not exists market_prices_indonesia_observed_on_idx
+  on public.market_prices_indonesia (observed_on desc);
+
+alter table public.market_prices_indonesia enable row level security;
+
+-- Same narrow access as the Malaysian table: public history, but rows written
+-- through the anon key must stay marked as official Bapanas data.
+drop policy if exists "market prices indonesia read"
+  on public.market_prices_indonesia;
+create policy "market prices indonesia read"
+  on public.market_prices_indonesia
+  for select
+  to anon
+  using (true);
+
+drop policy if exists "market prices indonesia insert"
+  on public.market_prices_indonesia;
+create policy "market prices indonesia insert"
+  on public.market_prices_indonesia
+  for insert
+  to anon
+  with check (source = 'bapanas');
+
+drop policy if exists "market prices indonesia update"
+  on public.market_prices_indonesia;
+create policy "market prices indonesia update"
+  on public.market_prices_indonesia
+  for update
+  to anon
+  using (source = 'bapanas')
+  with check (source = 'bapanas');
+
 -- Community chat rooms. Room ids are defined in lib/community.ts. Messages are
 -- shared by every demo account, so only use non-sensitive content here.
 create table if not exists public.community_messages (
