@@ -28,7 +28,7 @@ Next.js (App Router) + TypeScript + Tailwind CSS, PWA (manifest + simple service
 - `supabase/schema.sql` creates `farms` and `crops` keyed by `(owner_id, id)`, the `market_prices` history table, and `community_messages`; run it in the Supabase SQL editor.
 - The client talks to Supabase REST with the public anon/publishable key only. Never add a service-role key to the client.
 - Sync is local-first: localStorage is the cache, login pulls then merges last-write-wins per crop by `updatedAt`, and every change is pushed debounced. No hard deletes.
-- RLS in the schema is permissive demo-only. Replace it with Supabase Auth plus `auth.uid()` policies before real user data.
+- RLS in the schema is demo-only: `farms`/`crops` stay permissive for the shared demo accounts, `market_prices` allows read plus official-row insert/update, and `community_messages` allows read plus insert only. Replace all of them with Supabase Auth plus `auth.uid()` policies before real user data.
 
 ## Market prices (PriceCatcher)
 - Source: official KPDN/DOSM PriceCatcher monthly CSV at `storage.data.gov.my`. It is daily retail data, not a real-time or farm-gate feed.

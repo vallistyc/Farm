@@ -72,13 +72,30 @@ create index if not exists market_prices_observed_on_idx
 
 alter table public.market_prices enable row level security;
 
+-- The cron route reads history and upserts official rows, so anon needs
+-- select, insert, and update. No delete. Rows must stay marked as official.
 drop policy if exists "demo anon market prices" on public.market_prices;
-create policy "demo anon market prices"
+drop policy if exists "market prices read" on public.market_prices;
+create policy "market prices read"
   on public.market_prices
-  for all
+  for select
   to anon
-  using (true)
-  with check (true);
+  using (true);
+
+drop policy if exists "market prices insert" on public.market_prices;
+create policy "market prices insert"
+  on public.market_prices
+  for insert
+  to anon
+  with check (source = 'pricecatcher');
+
+drop policy if exists "market prices update" on public.market_prices;
+create policy "market prices update"
+  on public.market_prices
+  for update
+  to anon
+  using (source = 'pricecatcher')
+  with check (source = 'pricecatcher');
 
 -- Community chat rooms. Room ids are defined in lib/community.ts. Messages are
 -- shared by every demo account, so only use non-sensitive content here.
@@ -96,10 +113,19 @@ create index if not exists community_messages_room_time_idx
 
 alter table public.community_messages enable row level security;
 
+-- Public read and post only. Messages cannot be edited or deleted through the
+-- anon key, which keeps the demo data append-only.
 drop policy if exists "demo anon community messages" on public.community_messages;
-create policy "demo anon community messages"
+drop policy if exists "community read" on public.community_messages;
+create policy "community read"
   on public.community_messages
-  for all
+  for select
   to anon
-  using (true)
-  with check (true);
+  using (true);
+
+drop policy if exists "community post" on public.community_messages;
+create policy "community post"
+  on public.community_messages
+  for insert
+  to anon
+  with check (char_length(body) between 1 and 500);

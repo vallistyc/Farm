@@ -80,7 +80,9 @@ retail data or a sample.
 Farms and crops stay in localStorage and, when Supabase is configured, are also
 copied to two tables (`farms`, `crops`) keyed by the demo account. Logging in
 pulls the cloud copy, merges it with the phone copy (the newest crop wins), then
-pushes the result. Without a connection the app keeps working locally.
+pushes the result. Without a connection the app keeps working locally. Community
+chat uses the same project (`community_messages`), and the cron route stores
+PriceCatcher history in `market_prices`.
 
 1. In Supabase, open the SQL editor and run `supabase/schema.sql`.
 2. Copy the project URL and anon/publishable key into `.env.local`:
@@ -93,10 +95,11 @@ pushes the result. Without a connection the app keeps working locally.
 3. Restart `npm run dev`. Profile shows the sync state (saved to cloud,
    syncing, this phone only, or failed).
 
-The anon key is public by design, but the schema's RLS policies let any holder
-of the key read and write the demo tables. That is acceptable for fake
-competition data only. Replace them with Supabase Auth and `auth.uid()` policies
-before storing real farmer data.
+The anon key is public by design. `farms` and `crops` keep permissive demo
+policies; `market_prices` allows read plus insert/update of official rows; and
+`community_messages` allows read plus insert only, so messages cannot be edited
+or deleted with the public key. Replace all of these with Supabase Auth and
+`auth.uid()` policies before storing private farmer data.
 
 ## Live market prices (PriceCatcher)
 
