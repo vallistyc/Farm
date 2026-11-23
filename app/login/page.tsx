@@ -1,44 +1,50 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth, useSettings } from "@/components/providers";
 import { BrandMark } from "@/components/brand-mark";
-import { DEMO_ACCOUNTS, type DemoAccount, type LoginError } from "@/lib/auth";
-import { interpolate } from "@/i18n";
+import { PRIMARY_BUTTON } from "@/components/button-styles";
+import { isValidEmail, type AuthError } from "@/lib/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { t } = useSettings();
   const { login } = useAuth();
-  const [phone, setPhone] = useState("");
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState<LoginError | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<AuthError | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const errorText =
-    error === "phone"
-      ? t.login.errorPhone
-      : error === "pin"
-        ? t.login.errorPin
-        : error === "invalid"
-          ? t.login.errorInvalid
-          : null;
+    error === "email"
+      ? t.login.errorEmail
+      : error === "password"
+        ? t.login.errorPassword
+        : error === "network"
+          ? t.login.errorNetwork
+          : error === "invalid"
+            ? t.login.errorInvalid
+            : null;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = login(phone, pin);
+    if (!isValidEmail(email)) {
+      setError("email");
+      return;
+    }
+    if (!password) {
+      setError("password");
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    const result = await login(email, password);
+    setBusy(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    setError(null);
-    router.replace("/home");
-  }
-
-  function fillDemo(account: DemoAccount) {
-    setPhone(account.phone);
-    setPin(account.pin);
-    setError(null);
+    // On success the AppShell auth guard redirects the signed-in user to /home.
   }
 
   return (
@@ -56,21 +62,21 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
           <label
-            htmlFor="phone"
+            htmlFor="email"
             className="mb-1.5 block text-sm font-semibold"
           >
-            {t.login.phoneLabel}
+            {t.login.emailLabel}
           </label>
           <input
-            id="phone"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder={t.login.phonePlaceholder}
-            value={phone}
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder={t.login.emailPlaceholder}
+            value={email}
             onChange={(event) => {
-              setPhone(event.target.value);
+              setEmail(event.target.value);
               setError(null);
             }}
             className="min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base outline-none transition-colors placeholder:text-ink-muted/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
@@ -78,23 +84,24 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="pin" className="mb-1.5 block text-sm font-semibold">
-            {t.login.pinLabel}
+          <label
+            htmlFor="password"
+            className="mb-1.5 block text-sm font-semibold"
+          >
+            {t.login.passwordLabel}
           </label>
           <input
-            id="pin"
-            name="pin"
+            id="password"
+            name="password"
             type="password"
-            inputMode="numeric"
             autoComplete="current-password"
-            maxLength={4}
-            placeholder={t.login.pinPlaceholder}
-            value={pin}
+            placeholder={t.login.passwordPlaceholder}
+            value={password}
             onChange={(event) => {
-              setPin(event.target.value.replace(/\D/g, "").slice(0, 4));
+              setPassword(event.target.value);
               setError(null);
             }}
-            className="min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base tracking-[0.5em] outline-none transition-colors placeholder:text-ink-muted/60 placeholder:tracking-normal focus:border-brand focus:ring-2 focus:ring-brand/25"
+            className="min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base outline-none transition-colors placeholder:text-ink-muted/60 focus:border-brand focus:ring-2 focus:ring-brand/25"
           />
         </div>
 
@@ -109,43 +116,24 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="min-h-12 w-full rounded-xl bg-brand px-5 text-base font-semibold text-brand-ink transition-colors hover:bg-brand-strong"
+          disabled={busy}
+          className={`${PRIMARY_BUTTON} disabled:opacity-50`}
         >
           {t.login.submit}
         </button>
       </form>
 
-      <section
-        aria-labelledby="demo-heading"
-        className="rounded-2xl border border-line bg-surface p-4"
-      >
-        <h2 id="demo-heading" className="text-sm font-semibold">
-          {t.login.demoTitle}
-        </h2>
-        <p className="mt-1 text-xs text-ink-muted">{t.login.demoHint}</p>
-        <div className="mt-3 space-y-2">
-          {DEMO_ACCOUNTS.map((account) => (
-            <button
-              key={account.id}
-              type="button"
-              onClick={() => fillDemo(account)}
-              className="min-h-12 w-full rounded-xl border border-line bg-surface-muted px-3 py-2 text-left text-sm transition-colors hover:border-brand/60"
-            >
-              <span className="block font-semibold">{account.name}</span>
-              <span className="block text-xs text-ink-muted">
-                {interpolate(t.login.demoTap, {
-                  phone: account.phone,
-                  pin: account.pin,
-                })}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <p className="pb-4 text-center text-xs text-ink-muted">
-        {t.login.footer}
+      <p className="text-center text-sm text-ink-muted">
+        {t.login.noAccount}{" "}
+        <Link
+          href="/register"
+          className="font-semibold text-brand hover:underline"
+        >
+          {t.login.registerCta}
+        </Link>
       </p>
+
+      <p className="pb-4 text-center text-xs text-ink-muted">{t.login.footer}</p>
     </div>
   );
 }

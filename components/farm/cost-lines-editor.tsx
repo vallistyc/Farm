@@ -27,7 +27,7 @@ export function CostLinesEditor({
   onChange: (lines: CostLineDraft[]) => void;
   labelPlaceholder: string;
 }) {
-  const { t } = useSettings();
+  const { t, currency } = useSettings();
 
   function updateLine(id: string, patch: Partial<CostLineDraft>) {
     onChange(
@@ -62,7 +62,7 @@ export function CostLinesEditor({
               value={line.amount}
               onChange={(value) => updateLine(line.id, { amount: value })}
               inputMode="decimal"
-              suffix="MYR"
+              suffix={currency}
             />
           </div>
           <button

@@ -11,18 +11,20 @@ import {
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
 import { getCommodity } from "@/lib/commodities";
-import { useMarketQuote } from "@/components/market-prices";
+import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
-import { formatMoney } from "@/lib/currency";
+import { IDR_PER_MYR, formatMoney } from "@/lib/currency";
+import { marketSourceLabel } from "@/lib/market-display";
+import { preferredMarket } from "@/lib/market-context";
 import { formatDate } from "@/lib/format";
 
 export function CropDetailClient({ cropId }: { cropId: string }) {
-  const { t, locale, currency } = useSettings();
+  const { t, locale, currency, country } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const crop = user ? farm.getCrop(cropId) : undefined;
-  const quote = useMarketQuote(crop?.commodityId ?? "padi");
+  const snapshot = useMarketPrices();
 
   if (!user) return null;
 
@@ -44,9 +46,12 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
   const commodity = getCommodity(crop.commodityId);
   const totals = cropCostTotals(crop.costs);
   const hasCosts = totals.totalCostMyr > 0;
+  const market = commodity
+    ? preferredMarket(country, crop.commodityId, snapshot, IDR_PER_MYR)
+    : null;
   const pricing =
-    commodity && hasCosts
-      ? priceCrop(crop, quote.priceMyr)
+    commodity && hasCosts && market
+      ? priceCrop(crop, market.priceMyr)
       : null;
   const localeTag = LOCALE_TAGS[locale];
 
@@ -79,6 +84,11 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
             {formatMoney(pricing.recommendedPriceMyr, currency, localeTag)}
           </p>
           <p className="text-xs text-ink-muted">{t.common.perKg}</p>
+          {market ? (
+            <p className="mt-1 text-[11px] text-ink-muted">
+              {marketSourceLabel(market, t, localeTag)}
+            </p>
+          ) : null}
         </section>
       ) : (
         <section className="rounded-2xl border border-dashed border-line bg-surface p-5">

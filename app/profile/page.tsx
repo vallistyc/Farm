@@ -3,10 +3,12 @@
 import { useAuth, useSettings } from "@/components/providers";
 import { PageHeader } from "@/components/page-header";
 import { CURRENCIES, isCurrency } from "@/lib/currency";
+import { MARKET_COUNTRIES, isMarketCountry } from "@/lib/market-context";
 import { CURRENCY_LABEL_KEYS, LANGUAGES, isLocale } from "@/i18n";
 
 export default function ProfilePage() {
-  const { t, locale, currency, setLocale, setCurrency } = useSettings();
+  const { t, locale, currency, country, setLocale, setCurrency, setCountry } =
+    useSettings();
   const { user, logout, cloudStatus } = useAuth();
 
   if (!user) return null;
@@ -44,7 +46,7 @@ export default function ProfilePage() {
           </span>
           <div className="min-w-0">
             <p className="truncate text-base font-semibold">{user.name}</p>
-            <p className="truncate text-sm text-ink-muted">{user.phone}</p>
+            <p className="truncate text-sm text-ink-muted">{user.email}</p>
             <p className="truncate text-xs text-ink-muted">{user.region}</p>
           </div>
         </div>
@@ -76,6 +78,36 @@ export default function ProfilePage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="country"
+              className="mb-1.5 block text-sm font-semibold"
+            >
+              {t.profile.country}
+            </label>
+            <select
+              id="country"
+              value={country}
+              onChange={(event) => {
+                if (isMarketCountry(event.target.value)) {
+                  setCountry(event.target.value);
+                }
+              }}
+              className="min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand/25"
+            >
+              {MARKET_COUNTRIES.map((code) => (
+                <option key={code} value={code}>
+                  {code === "MY"
+                    ? t.radar.malaysiaTitle
+                    : t.radar.indonesiaTitle}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+              {t.profile.countryHint}
+            </p>
           </div>
 
           <div>
@@ -125,8 +157,8 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <p className="mt-4 rounded-2xl border border-tipis/30 bg-tipis/10 p-4 text-xs leading-relaxed text-tipis">
-        {t.profile.demoNote}
+      <p className="mt-4 rounded-2xl border border-line bg-surface-muted/60 p-4 text-xs leading-relaxed text-ink-muted">
+        {t.profile.accountNote}
       </p>
 
       <button

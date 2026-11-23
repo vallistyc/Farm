@@ -7,10 +7,12 @@ import { StatusBadge } from "@/components/status-badge";
 import { PRIMARY_BUTTON } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
 import { getCommodity } from "@/lib/commodities";
-import { useMarketQuote } from "@/components/market-prices";
+import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS } from "@/i18n";
-import { formatMoney } from "@/lib/currency";
+import { IDR_PER_MYR, formatMoney } from "@/lib/currency";
+import { marketSourceLabel } from "@/lib/market-display";
+import { preferredMarket } from "@/lib/market-context";
 
 type ChatMessage = { id: string; role: "user" | "advisor"; text: string };
 
@@ -22,16 +24,25 @@ function makeId(): string {
 }
 
 export function AiAdviceClient({ cropId }: { cropId?: string }) {
-  const { t, locale, currency } = useSettings();
+  const { t, locale, currency, country } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const crop = cropId ? farm.getCrop(cropId) : undefined;
   const commodity = crop ? getCommodity(crop.commodityId) : undefined;
-  const quote = useMarketQuote(crop?.commodityId ?? "padi");
+  const snapshot = useMarketPrices();
+  const market =
+    crop && commodity
+      ? preferredMarket(country, crop.commodityId, snapshot, IDR_PER_MYR)
+      : null;
   const totals = crop ? cropCostTotals(crop.costs) : undefined;
   const pricing =
-    crop && commodity && totals && totals.totalCostMyr > 0 && crop.yieldKg > 0
-      ? priceCrop(crop, quote.priceMyr)
+    crop &&
+    commodity &&
+    totals &&
+    market &&
+    totals.totalCostMyr > 0 &&
+    crop.yieldKg > 0
+      ? priceCrop(crop, market.priceMyr)
       : null;
   const localeTag = LOCALE_TAGS[locale];
 
@@ -95,13 +106,17 @@ export function AiAdviceClient({ cropId }: { cropId?: string }) {
                   hiddenBreakdown: crop.costs.hidden,
                 }
               : undefined,
-          market: crop
-            ? {
-                priceMyr: quote.priceMyr,
-                observedAt: quote.observedAt,
-                source: quote.source,
-              }
-            : undefined,
+          market:
+            market && crop
+              ? {
+                  country: market.country,
+                  priceMyr: market.priceMyr,
+                  nativePrice: market.nativePrice,
+                  nativeCurrency: market.nativeCurrency,
+                  observedAt: market.observedAt,
+                  source: market.source,
+                }
+              : undefined,
         }),
         signal: AbortSignal.timeout(60000),
       });
@@ -183,14 +198,21 @@ export function AiAdviceClient({ cropId }: { cropId?: string }) {
                 {t.commodities[crop.commodityId]}
               </p>
               {pricing ? (
-                <p className="mt-0.5 text-xs text-ink-muted">
-                  {formatMoney(
-                    pricing.recommendedPriceMyr,
-                    currency,
-                    localeTag,
-                  )}{" "}
-                  {t.common.perKg}
-                </p>
+                <>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    {formatMoney(
+                      pricing.recommendedPriceMyr,
+                      currency,
+                      localeTag,
+                    )}{" "}
+                    {t.common.perKg}
+                  </p>
+                  {market ? (
+                    <p className="mt-0.5 text-[11px] text-ink-muted">
+                      {marketSourceLabel(market, t, localeTag)}
+                    </p>
+                  ) : null}
+                </>
               ) : (
                 <p className="mt-0.5 text-xs text-ink-muted">
                   {t.farm.costsNotEntered}

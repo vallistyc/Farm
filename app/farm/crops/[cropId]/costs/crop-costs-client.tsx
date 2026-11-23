@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -21,8 +21,8 @@ import {
 import { useFarm } from "@/lib/farm-store";
 import { HIDDEN_COST_KEYS, type HiddenCostKey } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
-import { formatMoney } from "@/lib/currency";
-import { parseDecimal } from "@/lib/format";
+import { formatAmount, fromMyr, toMyr } from "@/lib/currency";
+import { parseAmount, parseDecimal } from "@/lib/format";
 
 const TOTAL_STEPS = 4;
 
@@ -40,14 +40,14 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     (crop?.costs.direct ?? []).map((line) => ({
       id: line.id,
       label: line.label,
-      amount: String(line.amountMyr),
+      amount: String(fromMyr(line.amountMyr, currency)),
     })),
   );
   const [labour, setLabour] = useState<CostLineDraft[]>(() =>
     (crop?.costs.labour ?? []).map((line) => ({
       id: line.id,
       label: line.label,
-      amount: String(line.amountMyr),
+      amount: String(fromMyr(line.amountMyr, currency)),
     })),
   );
   const [hidden, setHidden] = useState<HiddenDraft>(() => {
@@ -55,7 +55,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     if (crop) {
       for (const key of HIDDEN_COST_KEYS) {
         const value = crop.costs.hidden[key];
-        if (value !== undefined) next[key] = String(value);
+        if (value !== undefined) next[key] = String(fromMyr(value, currency));
       }
     }
     return next;
@@ -101,9 +101,9 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
   ];
 
   const linesTotal = (lines: CostLineDraft[]) =>
-    lines.reduce((sum, line) => sum + parseDecimal(line.amount), 0);
+    lines.reduce((sum, line) => sum + parseAmount(line.amount, currency), 0);
   const hiddenTotal = HIDDEN_COST_KEYS.reduce(
-    (sum, key) => sum + parseDecimal(hidden[key] ?? ""),
+    (sum, key) => sum + parseAmount(hidden[key] ?? "", currency),
     0,
   );
   const totalSoFar =
@@ -141,17 +141,26 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
 
     const toLines = (lines: CostLineDraft[]) =>
       lines
-        .filter((line) => line.label.trim() || parseDecimal(line.amount) > 0)
+        .filter(
+          (line) =>
+            line.label.trim() || parseAmount(line.amount, currency) > 0,
+        )
         .map((line) => ({
           id: line.id,
           label: line.label.trim() || "—",
-          amountMyr: Math.max(0, parseDecimal(line.amount)),
+          amountMyr: toMyr(
+            Math.max(0, parseAmount(line.amount, currency)),
+            currency,
+          ),
         }));
 
     const hiddenValues: Partial<Record<HiddenCostKey, number>> = {};
     for (const key of HIDDEN_COST_KEYS) {
       if (key in hidden) {
-        hiddenValues[key] = Math.max(0, parseDecimal(hidden[key] ?? ""));
+        hiddenValues[key] = toMyr(
+          Math.max(0, parseAmount(hidden[key] ?? "", currency)),
+          currency,
+        );
       }
     }
 
@@ -209,7 +218,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
 
       <p className="mt-3 inline-flex rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-ink-muted">
         {interpolate(t.farm.wizard.totalSoFar, {
-          amount: formatMoney(totalSoFar, currency, localeTag),
+          amount: formatAmount(totalSoFar, currency, localeTag),
         })}
       </p>
 
@@ -299,7 +308,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
                           }))
                         }
                         inputMode="decimal"
-                        suffix="MYR"
+                        suffix={currency}
                       />
                     </div>
                   ) : null}
@@ -394,4 +403,15 @@ function CostSuggestions({
       </div>
     </div>
   );
+}
+
+
+/**
+ * Remounts CropCostsClient whenever the display currency changes so that the
+ * cost-line drafts are always initialised in the current currency.  This is
+ * the simplest fix for the stale-closure bug in the lazy useState initialisers.
+ */
+export function CropCostsClientWrapper({ cropId }: { cropId: string }) {
+  const { currency } = useSettings();
+  return <CropCostsClient key={cropId + '-' + currency} cropId={cropId} />;
 }

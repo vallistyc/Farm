@@ -12,7 +12,6 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
-import { useMarketQuote } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS } from "@/i18n";
 import { formatMoney } from "@/lib/currency";
@@ -24,7 +23,6 @@ export function PriceCalculatorClient({ cropId }: { cropId: string }) {
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const crop = user ? farm.getCrop(cropId) : undefined;
-  const quote = useMarketQuote(crop?.commodityId ?? "padi");
 
   const [margin, setMargin] = useState(() =>
     String(crop?.marginPercent ?? 10),
@@ -55,7 +53,7 @@ export function PriceCalculatorClient({ cropId }: { cropId: string }) {
       : null;
   const pricing = priceCrop(
     { ...crop, marginPercent: marginError ? 0 : marginValue },
-    quote.priceMyr,
+    0,
   );
   const localeTag = LOCALE_TAGS[locale];
 

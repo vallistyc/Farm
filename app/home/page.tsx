@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { useAuth, useSettings } from "@/components/providers";
 import { BrandMark } from "@/components/brand-mark";
+import { GeneralAdviceCard } from "@/components/general-advice-card";
 import { GlyphIcon, type ActionIconName } from "@/components/icons";
 import { StatusBadge } from "@/components/status-badge";
 import { useFarm } from "@/lib/farm-store";
 import { getCommodity } from "@/lib/commodities";
-import { useMarketQuote } from "@/components/market-prices";
+import { useMarketPrices } from "@/components/market-prices";
 import { latestCrop, latestPriceableCrop, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
-import { formatMoney } from "@/lib/currency";
-import { formatDate } from "@/lib/format";
+import { IDR_PER_MYR, formatMoney } from "@/lib/currency";
+import { marketSourceLabel } from "@/lib/market-display";
+import { preferredMarket } from "@/lib/market-context";
 
 const QUICK_ICONS: Record<"quickCalc" | "quickCost" | "quickMarket", ActionIconName> = {
   quickCalc: "calculator",
@@ -20,12 +22,15 @@ const QUICK_ICONS: Record<"quickCalc" | "quickCost" | "quickMarket", ActionIconN
 };
 
 export default function HomePage() {
-  const { t, locale, currency } = useSettings();
+  const { t, locale, currency, country } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const localeTag = LOCALE_TAGS[locale];
+  const snapshot = useMarketPrices();
   const pricedCrop = latestPriceableCrop(farm.data.crops);
-  const pricedQuote = useMarketQuote(pricedCrop?.commodityId ?? "padi");
+  const pricedMarket = pricedCrop
+    ? preferredMarket(country, pricedCrop.commodityId, snapshot, IDR_PER_MYR)
+    : null;
   const pricedCommodity = pricedCrop
     ? getCommodity(pricedCrop.commodityId)
     : undefined;
@@ -33,8 +38,8 @@ export default function HomePage() {
   if (!user) return null;
 
   const pricing =
-    pricedCrop && pricedCommodity
-      ? priceCrop(pricedCrop, pricedQuote.priceMyr)
+    pricedCrop && pricedCommodity && pricedMarket
+      ? priceCrop(pricedCrop, pricedMarket.priceMyr)
       : null;
   const recentCrop = latestCrop(farm.data.crops);
 
@@ -72,6 +77,8 @@ export default function HomePage() {
         </div>
       </header>
 
+      <GeneralAdviceCard />
+
       <section className="rounded-2xl border border-line bg-surface p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold">{t.home.summaryTitle}</h2>
@@ -99,12 +106,9 @@ export default function HomePage() {
             </p>
             <p className="text-xs text-ink-muted">{t.common.perKg}</p>
             <p className="mt-1 text-[11px] text-ink-muted">
-              {pricedQuote.source === "pricecatcher"
-                ? `${t.radar.liveBadge} · ${formatDate(
-                    pricedQuote.observedAt,
-                    localeTag,
-                  )}`
-                : t.radar.sampleBadge}
+              {pricedMarket
+                ? marketSourceLabel(pricedMarket, t, localeTag)
+                : t.radar.unavailableBadge}
             </p>
             <Link
               href={`/farm/crops/${pricedCrop.id}/recommendation`}

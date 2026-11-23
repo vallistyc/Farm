@@ -1,8 +1,14 @@
 import { isLocale, type Locale } from "@/i18n";
 import en from "@/i18n/en";
 import { getCommodity, type CommodityId } from "@/lib/commodities";
-import { formatMoney, isCurrency, type CurrencyCode } from "@/lib/currency";
+import {
+  formatAmount,
+  formatMoney,
+  isCurrency,
+  type CurrencyCode,
+} from "@/lib/currency";
 import { HIDDEN_COST_KEYS, type HiddenCostKey } from "@/lib/farm";
+import { isMarketCountry, type MarketCountry } from "@/lib/market-context";
 import { calculatePricing } from "@/lib/pricing";
 
 export const MAX_QUESTION_LENGTH = 500;
@@ -20,9 +26,12 @@ export type AdviceCrop = {
 };
 
 export type AdviceMarket = {
+  country: MarketCountry;
   priceMyr: number;
+  nativePrice: number;
+  nativeCurrency: CurrencyCode;
   observedAt: string;
-  source: "pricecatcher" | "seed";
+  source: "pricecatcher" | "seed" | "bapanas";
 };
 
 export type AdviceRequest = {
@@ -121,7 +130,9 @@ export function parseAdviceRequest(raw: unknown): AdviceRequest | null {
         ? value.observedAt.slice(0, 10)
         : undefined;
     const source =
-      value.source === "pricecatcher" || value.source === "seed"
+      value.source === "pricecatcher" ||
+      value.source === "seed" ||
+      value.source === "bapanas"
         ? value.source
         : undefined;
     if (
@@ -132,7 +143,19 @@ export function parseAdviceRequest(raw: unknown): AdviceRequest | null {
     ) {
       return null;
     }
-    market = { priceMyr, observedAt, source };
+    const country = isMarketCountry(value.country) ? value.country : "MY";
+    market = {
+      country,
+      priceMyr,
+      nativePrice: readNumber(value.nativePrice) ?? priceMyr,
+      nativeCurrency: isCurrency(value.nativeCurrency)
+        ? value.nativeCurrency
+        : country === "ID"
+          ? "IDR"
+          : "MYR",
+      observedAt,
+      source,
+    };
   }
 
   return {
@@ -154,8 +177,9 @@ export function buildSystemPrompt(locale: Locale): string {
     "Keep the answer under 120 words.",
     "Questions about when or where to sell a harvest, prices, costs, or profit are farming questions. Always answer them.",
     "Use the farmer's crop and cost context when provided.",
-    "Market prices may come from official PriceCatcher retail data or from sample data. State the source given in the context; never call sample data live.",
-    "PriceCatcher is retail data, so it can differ from the farm-gate price the farmer receives.",
+    "Market prices come from official sources: PriceCatcher (Malaysia, retail) or Bapanas (Indonesia, producer level), or from sample data when no official feed covers the commodity. State the source given in the context; never call sample data live.",
+    "Retail and producer-level prices can differ from the farm-gate price the farmer receives. Say this when it matters.",
+    "When the farmer sells across the border, say that the converted value uses a fixed reference rate, not a bank rate.",
     "Never promise guaranteed profit or a guaranteed sale.",
   ].join(" ");
 }
@@ -179,8 +203,10 @@ export function buildUserPrompt(request: AdviceRequest): string {
     request.market?.priceMyr ?? (commodity ? (commodity.trendMyr.at(-1) ?? 0) : 0);
   const marketLabel = request.market
     ? request.market.source === "pricecatcher"
-      ? `official PriceCatcher retail data, observed ${request.market.observedAt}`
-      : `sample data, observed ${request.market.observedAt}`
+      ? `official PriceCatcher retail data, Malaysia, observed ${request.market.observedAt}`
+      : request.market.source === "bapanas"
+        ? `official Bapanas producer-level data, Indonesia, observed ${request.market.observedAt}`
+        : `sample data, observed ${request.market.observedAt}`
     : "sample data";
   const pricing = calculatePricing({
     directCostsMyr: crop.directCostsMyr,
@@ -212,13 +238,21 @@ export function buildUserPrompt(request: AdviceRequest): string {
     }
   }
 
+  const nativeMarketLine = request.market
+    ? ` (${formatAmount(
+        request.market.nativePrice,
+        request.market.nativeCurrency,
+        "en-MY",
+      )} in ${request.market.nativeCurrency})`
+    : "";
+
   lines.push(
     `- Cost per kg: ${money(pricing.costPerUnitMyr)}`,
     `- Minimum selling price: ${money(pricing.minimumPriceMyr)} per kg`,
-    `- Market price: ${money(pricing.marketPriceMyr)} per kg (${marketLabel})`,
+    `- Market price: ${money(pricing.marketPriceMyr)} per kg${nativeMarketLine} (${marketLabel})`,
     `- Market status: ${en.status[pricing.status]}`,
     `- Recommended selling price: ${money(pricing.recommendedPriceMyr)} per kg`,
-    `- Amounts are in ${request.currency}, converted from MYR at a fixed demo rate.`,
+    `- Amounts are shown in ${request.currency}. Cross-country values use a fixed reference rate of 1 MYR = 3,650 IDR, not a bank rate.`,
   );
 
   return lines.join("\n");

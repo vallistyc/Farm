@@ -2,18 +2,17 @@
 
 import { useSettings } from "@/components/providers";
 import { BrandMark } from "@/components/brand-mark";
-import { CURRENCIES } from "@/lib/currency";
+import { countryCurrency } from "@/lib/market-context";
 import { CURRENCY_LABEL_KEYS, LANGUAGES } from "@/i18n";
 
+const COUNTRY_LABELS = [
+  { code: "MY" as const, titleKey: "malaysiaTitle" as const },
+  { code: "ID" as const, titleKey: "indonesiaTitle" as const },
+];
+
 export function WelcomeGate() {
-  const {
-    t,
-    locale,
-    currency,
-    setLocale,
-    setCurrency,
-    completeOnboarding,
-  } = useSettings();
+  const { t, locale, country, setLocale, setCountry, completeOnboarding } =
+    useSettings();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
@@ -64,26 +63,29 @@ export function WelcomeGate() {
 
         <fieldset>
           <legend className="mb-2 text-sm font-semibold">
-            {t.welcome.currencyLabel}
+            {t.welcome.countryLabel}
           </legend>
           <div className="grid grid-cols-2 gap-2">
-            {CURRENCIES.map((item) => {
-              const selected = item.code === currency;
+            {COUNTRY_LABELS.map((item) => {
+              const selected = item.code === country;
+              const currency = countryCurrency(item.code);
               return (
                 <button
                   key={item.code}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => setCurrency(item.code)}
+                  onClick={() => setCountry(item.code)}
                   className={`flex min-h-14 flex-col justify-center gap-0.5 rounded-xl border px-3 text-left transition-colors ${
                     selected
                       ? "border-brand bg-brand-soft text-brand"
                       : "border-line bg-surface text-ink hover:border-brand/60"
                   }`}
                 >
-                  <span className="text-sm font-semibold">{item.code}</span>
+                  <span className="text-sm font-semibold">
+                    {t.radar[item.titleKey]}
+                  </span>
                   <span className="w-full truncate text-xs opacity-80">
-                    {t.currency[CURRENCY_LABEL_KEYS[item.code]]}
+                    {t.currency[CURRENCY_LABEL_KEYS[currency]]}
                   </span>
                 </button>
               );
@@ -92,14 +94,14 @@ export function WelcomeGate() {
         </fieldset>
 
         <p className="text-xs leading-relaxed text-ink-muted">
-          {t.welcome.currencyNote}
+          {t.welcome.countryNote}
         </p>
       </div>
 
       <div className="sticky bottom-0 border-t border-line bg-background/95 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
         <button
           type="button"
-          onClick={() => completeOnboarding(locale, currency)}
+          onClick={() => completeOnboarding(locale, country)}
           className="min-h-12 w-full rounded-xl bg-brand px-5 text-base font-semibold text-brand-ink transition-colors hover:bg-brand-strong"
         >
           {t.welcome.continue}

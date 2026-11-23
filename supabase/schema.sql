@@ -1,10 +1,12 @@
--- Harga Jual Petani - Supabase schema (demo prototype).
+-- Harga Jual Petani - Supabase schema.
 -- Run once in the Supabase SQL editor.
 --
--- Security note: the app uses the public anon key with demo login, so these
--- permissive RLS policies are for the competition prototype only. Before
--- handling real user data, replace them with Supabase Auth and policies based
--- on auth.uid().
+-- Security: farms, crops, and community_messages are protected by Supabase Auth
+-- policies keyed on auth.uid(). The app stores the signed-in user's id in
+-- owner_id / author_id and sends that user's access token on every request.
+-- market_prices and market_prices_indonesia stay public read (served by the
+-- /api routes with the anon key) with source-constrained writes. Enable the
+-- Email auth provider before use.
 
 create table if not exists public.farms (
   owner_id text not null,
@@ -39,20 +41,22 @@ alter table public.farms enable row level security;
 alter table public.crops enable row level security;
 
 drop policy if exists "demo anon farms" on public.farms;
-create policy "demo anon farms"
+drop policy if exists "farms_owner" on public.farms;
+create policy "farms_owner"
   on public.farms
   for all
-  to anon
-  using (true)
-  with check (true);
+  to authenticated
+  using (owner_id = auth.uid()::text)
+  with check (owner_id = auth.uid()::text);
 
 drop policy if exists "demo anon crops" on public.crops;
-create policy "demo anon crops"
+drop policy if exists "crops_owner" on public.crops;
+create policy "crops_owner"
   on public.crops
   for all
-  to anon
-  using (true)
-  with check (true);
+  to authenticated
+  using (owner_id = auth.uid()::text)
+  with check (owner_id = auth.uid()::text);
 
 -- Daily market prices ingested from PriceCatcher (KPDN). One row per
 -- commodity per observed day. The cron route adds a row set every day, so the
@@ -158,19 +162,49 @@ create index if not exists community_messages_room_time_idx
 
 alter table public.community_messages enable row level security;
 
--- Public read and post only. Messages cannot be edited or deleted through the
--- anon key, which keeps the demo data append-only.
+-- Signed-in farmers read the room and post only as themselves.
 drop policy if exists "demo anon community messages" on public.community_messages;
 drop policy if exists "community read" on public.community_messages;
-create policy "community read"
+drop policy if exists "community post" on public.community_messages;
+drop policy if exists "community_read" on public.community_messages;
+drop policy if exists "community_post" on public.community_messages;
+create policy "community_read"
   on public.community_messages
   for select
-  to anon
+  to authenticated
   using (true);
 
-drop policy if exists "community post" on public.community_messages;
-create policy "community post"
+create policy "community_post"
   on public.community_messages
   for insert
-  to anon
-  with check (char_length(body) between 1 and 500);
+  to authenticated
+  with check (
+    author_id = auth.uid()::text
+    and char_length(body) between 1 and 500
+  );
+
+-- General Advice cache. One row per (user, crop, language); the app reads it to
+-- avoid regenerating advice for up to 30 days. RLS keys on auth.uid() so each
+-- farmer only sees their own cached advice.
+create table if not exists public.advice_cache (
+  user_id uuid not null,
+  crop_id text not null,
+  language text not null,
+  input_hash text not null,
+  advice jsonb not null,
+  generated_at timestamptz not null default now(),
+  primary key (user_id, crop_id, language)
+);
+
+create index if not exists advice_cache_user_generated_idx
+  on public.advice_cache (user_id, generated_at desc);
+
+alter table public.advice_cache enable row level security;
+
+drop policy if exists "advice_owner" on public.advice_cache;
+create policy "advice_owner"
+  on public.advice_cache
+  for all
+  to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());

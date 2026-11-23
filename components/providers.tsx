@@ -10,6 +10,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import type { Session } from "@supabase/supabase-js";
 import {
   DEFAULT_LOCALE,
   dictionaries,
@@ -23,12 +24,19 @@ import {
   type CurrencyCode,
 } from "@/lib/currency";
 import {
-  DEMO_ACCOUNTS,
-  findDemoAccount,
+  DEFAULT_COUNTRY,
+  countryCurrency,
+  isMarketCountry,
+  type MarketCountry,
+} from "@/lib/market-context";
+import {
+  classifyAuthError,
   toFarmer,
+  type AuthResult,
   type Farmer,
-  type LoginResult,
+  type RegisterResult,
 } from "@/lib/auth";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { createLocalStore } from "@/lib/local-store";
 import {
   getFarmData,
@@ -39,38 +47,39 @@ import { isCloudEnabled, pullFarm, pushFarm, type CloudStatus } from "@/lib/clou
 import { mergeFarmData } from "@/lib/cloud-merge";
 
 const SETTINGS_KEY = "hjp.settings.v1";
-const SESSION_KEY = "hjp.session.v1";
 
 type Settings = {
   locale: Locale;
   currency: CurrencyCode;
+  country: MarketCountry;
   onboarded: boolean;
 };
 
 const DEFAULT_SETTINGS: Settings = {
   locale: DEFAULT_LOCALE,
   currency: DEFAULT_CURRENCY,
+  country: DEFAULT_COUNTRY,
   onboarded: false,
 };
 
 function parseSettings(raw: unknown): Settings {
   const saved = (raw ?? {}) as Partial<Settings>;
+  const currency = isCurrency(saved.currency)
+    ? saved.currency
+    : DEFAULT_CURRENCY;
   return {
     locale: isLocale(saved.locale) ? saved.locale : DEFAULT_LOCALE,
-    currency: isCurrency(saved.currency) ? saved.currency : DEFAULT_CURRENCY,
+    currency,
+    country: isMarketCountry(saved.country)
+      ? saved.country
+      : currency === "IDR"
+        ? "ID"
+        : DEFAULT_COUNTRY,
     onboarded: saved.onboarded === true,
   };
 }
 
-type Session = { farmerId?: string };
-
 const settingsStore = createLocalStore(SETTINGS_KEY, DEFAULT_SETTINGS, parseSettings);
-const sessionStore = createLocalStore<Session>(SESSION_KEY, {}, (raw) => {
-  const saved = (raw ?? {}) as Session;
-  return typeof saved.farmerId === "string"
-    ? { farmerId: saved.farmerId }
-    : {};
-});
 
 const noopSubscribe = () => () => {};
 const hydratedSnapshot = () => true;
@@ -89,14 +98,21 @@ type SettingsContextValue = Settings & {
   t: Dictionary;
   setLocale: (locale: Locale) => void;
   setCurrency: (currency: CurrencyCode) => void;
-  completeOnboarding: (locale: Locale, currency: CurrencyCode) => void;
+  setCountry: (country: MarketCountry) => void;
+  completeOnboarding: (locale: Locale, country: MarketCountry) => void;
 };
 
 type AuthContextValue = {
   ready: boolean;
   user: Farmer | null;
-  login: (phone: string, pin: string) => LoginResult;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (input: {
+    name: string;
+    region: string;
+    email: string;
+    password: string;
+  }) => Promise<RegisterResult>;
+  logout: () => Promise<void>;
   cloudStatus: CloudStatus;
 };
 
@@ -123,9 +139,22 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     settingsStore.set({ ...settingsStore.getSnapshot(), currency });
   }, []);
 
+  const setCountry = useCallback((country: MarketCountry) => {
+    settingsStore.set({
+      ...settingsStore.getSnapshot(),
+      country,
+      currency: countryCurrency(country),
+    });
+  }, []);
+
   const completeOnboarding = useCallback(
-    (locale: Locale, currency: CurrencyCode) => {
-      settingsStore.set({ locale, currency, onboarded: true });
+    (locale: Locale, country: MarketCountry) => {
+      settingsStore.set({
+        locale,
+        country,
+        currency: countryCurrency(country),
+        onboarded: true,
+      });
     },
     [],
   );
@@ -137,9 +166,10 @@ function SettingsProvider({ children }: { children: ReactNode }) {
       t: dictionaries[settings.locale],
       setLocale,
       setCurrency,
+      setCountry,
       completeOnboarding,
     }),
-    [settings, ready, setLocale, setCurrency, completeOnboarding],
+    [settings, ready, setLocale, setCurrency, setCountry, completeOnboarding],
   );
 
   return (
@@ -149,24 +179,37 @@ function SettingsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Demo-only auth: credentials live in the client bundle. Replace with a
-// server session before handling real user data.
+// Supabase Auth (email + password). The session is owned by supabase-js
+// (persisted + auto-refreshed); this provider mirrors it into `user`.
 function AuthProvider({ children }: { children: ReactNode }) {
-  const session = useSyncExternalStore(
-    sessionStore.subscribe,
-    sessionStore.getSnapshot,
-    sessionStore.getServerSnapshot,
-  );
-  const ready = useHydrated();
+  const [user, setUser] = useState<Farmer | null>(null);
+  const [ready, setReady] = useState(() => !isSupabaseConfigured);
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>("local");
 
-  const user = useMemo<Farmer | null>(() => {
-    if (!session.farmerId) return null;
-    const account = DEMO_ACCOUNTS.find(
-      (item) => item.id === session.farmerId,
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const supabase = getSupabase();
+
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setUser(data.session ? toFarmer(data.session.user) : null);
+      setReady(true);
+    });
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session: Session | null) => {
+        setUser(session ? toFarmer(session.user) : null);
+        setReady(true);
+      },
     );
-    return account ? toFarmer(account) : null;
-  }, [session.farmerId]);
+
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
 
   const userId = user?.id;
 
@@ -216,20 +259,51 @@ function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
-  const login = useCallback((phone: string, pin: string): LoginResult => {
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length < 7) return { ok: false, error: "phone" };
-    if (!/^\d{4}$/.test(pin)) return { ok: false, error: "pin" };
+  const login = useCallback(
+    async (email: string, password: string): Promise<AuthResult> => {
+      if (!isSupabaseConfigured) return { ok: false, error: "network" };
+      const { error } = await getSupabase().auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        return { ok: false, error: classifyAuthError(error) };
+      }
+      return { ok: true };
+    },
+    [],
+  );
 
-    const account = findDemoAccount(phone, pin);
-    if (!account) return { ok: false, error: "invalid" };
+  const register = useCallback(
+    async (input: {
+      name: string;
+      region: string;
+      email: string;
+      password: string;
+    }): Promise<RegisterResult> => {
+      if (!isSupabaseConfigured) return { ok: false, error: "network" };
+      const { data, error } = await getSupabase().auth.signUp({
+        email: input.email.trim(),
+        password: input.password,
+        options: {
+          data: { name: input.name.trim(), region: input.region.trim() },
+        },
+      });
+      if (error) {
+        return { ok: false, error: classifyAuthError(error) };
+      }
+      // When email confirmation is on, signUp returns a user but no session.
+      const needsConfirm = !data.session;
+      return { ok: true, needsConfirm };
+    },
+    [],
+  );
 
-    sessionStore.set({ farmerId: account.id });
-    return { ok: true };
-  }, []);
-
-  const logout = useCallback(() => {
-    sessionStore.set({});
+  const logout = useCallback(async () => {
+    if (isSupabaseConfigured) {
+      await getSupabase().auth.signOut();
+    }
+    setUser(null);
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -237,10 +311,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       user,
       login,
+      register,
       logout,
       cloudStatus: userId ? cloudStatus : "local",
     }),
-    [ready, user, login, logout, userId, cloudStatus],
+    [ready, user, login, register, logout, userId, cloudStatus],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

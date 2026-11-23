@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/lib/supabase";
 import type { FarmData } from "@/lib/farm";
 import {
   parseCropRows,
@@ -33,7 +34,10 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
 
   const headers = new Headers(init?.headers);
   headers.set("apikey", SUPABASE_KEY);
-  headers.set("Authorization", `Bearer ${SUPABASE_KEY}`);
+  // Use the signed-in user's access token so RLS policies based on auth.uid()
+  // apply; fall back to the anon key when there is no session.
+  const token = (await getAccessToken()) ?? SUPABASE_KEY;
+  headers.set("Authorization", `Bearer ${token}`);
   headers.set("Content-Type", "application/json");
 
   return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {

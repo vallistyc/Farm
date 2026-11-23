@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { CropCostsClient } from "./crop-costs-client";
+import { CropCostsClientWrapper } from "./crop-costs-client";
 
 function Loading() {
   return (
@@ -16,7 +16,7 @@ export default function Page({
   return (
     <Suspense fallback={<Loading />}>
       {params.then(({ cropId }) => (
-        <CropCostsClient cropId={cropId} />
+        <CropCostsClientWrapper cropId={cropId} />
       ))}
     </Suspense>
   );

@@ -1,46 +1,63 @@
-import farmers from "@/data/farmers.json";
+import type { AuthError as SupabaseAuthError, User } from "@supabase/supabase-js";
 
-export type DemoAccount = {
+export type Farmer = {
   id: string;
   name: string;
-  phone: string;
-  pin: string;
+  email: string;
   region: string;
 };
 
-export type Farmer = Omit<DemoAccount, "pin">;
+export type AuthError =
+  | "email"
+  | "password"
+  | "name"
+  | "region"
+  | "invalid"
+  | "exists"
+  | "network"
+  | "unknown";
 
-export type LoginError = "phone" | "pin" | "invalid";
+export type AuthResult = { ok: true } | { ok: false; error: AuthError };
 
-export type LoginResult = { ok: true } | { ok: false; error: LoginError };
+export type RegisterResult =
+  | { ok: true; needsConfirm: boolean }
+  | { ok: false; error: AuthError };
 
-export const DEMO_ACCOUNTS: DemoAccount[] = farmers;
-
-export function toFarmer(account: DemoAccount): Farmer {
-  const { id, name, phone, region } = account;
-  return { id, name, phone, region };
+export function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-export function phoneVariants(input: string): string[] {
-  const digits = input.replace(/\D/g, "");
-  const variants = new Set<string>([digits]);
+/** Maps a Supabase auth user to the app's Farmer shape (name/region from metadata). */
+export function toFarmer(user: User): Farmer {
+  const meta = (user.user_metadata ?? {}) as {
+    name?: string;
+    region?: string;
+  };
+  const email = user.email ?? "";
+  const fallbackName = email ? email.split("@")[0] : "Petani";
+  return {
+    id: user.id,
+    email,
+    name: meta.name?.trim() || fallbackName,
+    region: meta.region?.trim() ?? "",
+  };
+}
 
-  if (digits.startsWith("60")) variants.add(`0${digits.slice(2)}`);
-  if (digits.startsWith("62")) variants.add(`0${digits.slice(2)}`);
-  if (digits.startsWith("0")) {
-    variants.add(`60${digits.slice(1)}`);
-    variants.add(`62${digits.slice(1)}`);
+/** Classifies a supabase-js auth error into an app-level AuthError. */
+export function classifyAuthError(error: SupabaseAuthError): AuthError {
+  const message = error.message ?? "";
+  const name = error.name ?? "";
+  if (
+    name === "FetchError" ||
+    /failed to fetch|networkerror|fetch failed|network request/i.test(message)
+  ) {
+    return "network";
   }
-
-  return [...variants];
-}
-
-export function findDemoAccount(
-  phone: string,
-  pin: string,
-): DemoAccount | undefined {
-  const variants = phoneVariants(phone);
-  return DEMO_ACCOUNTS.find(
-    (account) => variants.includes(account.phone) && account.pin === pin,
-  );
+  if (/already registered|already exists|user already/i.test(message)) {
+    return "exists";
+  }
+  if (/invalid login credentials|invalid email or password/i.test(message)) {
+    return "invalid";
+  }
+  return "unknown";
 }
