@@ -261,13 +261,13 @@ function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
-      if (!isSupabaseConfigured) return { ok: false, error: "network" };
+      if (!isSupabaseConfigured) return { ok: false, error: "notConfigured" };
       const { error } = await getSupabase().auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (error) {
-        return { ok: false, error: classifyAuthError(error) };
+        return { ok: false, error: classifyAuthError(error), detail: error.message };
       }
       return { ok: true };
     },
@@ -281,7 +281,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       email: string;
       password: string;
     }): Promise<RegisterResult> => {
-      if (!isSupabaseConfigured) return { ok: false, error: "network" };
+      if (!isSupabaseConfigured) return { ok: false, error: "notConfigured" };
       const { data, error } = await getSupabase().auth.signUp({
         email: input.email.trim(),
         password: input.password,
@@ -291,7 +291,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) {
-        return { ok: false, error: classifyAuthError(error) };
+        return { ok: false, error: classifyAuthError(error), detail: error.message };
       }
       // When email confirmation is on, signUp returns a user but no session.
       const needsConfirm = !data.session;

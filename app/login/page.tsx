@@ -13,18 +13,22 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthError | null>(null);
+  const [detail, setDetail] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const errorText =
-    error === "email"
+  const errorText = !error
+    ? null
+    : error === "email"
       ? t.login.errorEmail
       : error === "password"
         ? t.login.errorPassword
-        : error === "network"
-          ? t.login.errorNetwork
-          : error === "invalid"
-            ? t.login.errorInvalid
-            : null;
+        : error === "invalid"
+          ? t.login.errorInvalid
+          : error === "notConfigured"
+            ? t.login.errorNotConfigured
+            : error === "network"
+              ? t.login.errorNetwork
+              : detail || t.login.errorGeneric;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,11 +41,13 @@ export default function LoginPage() {
       return;
     }
     setError(null);
+    setDetail("");
     setBusy(true);
     const result = await login(email, password);
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
+      setDetail(result.detail ?? "");
       return;
     }
     // On success the AppShell auth guard redirects the signed-in user to /home.

@@ -47,7 +47,8 @@ export type Crop = {
   harvestDate: string;
   yieldKg: number;
   lossPercent: number;
-  marginPercent: number;
+  /** null until the farmer explicitly enters it in the cost wizard. */
+  marginPercent: number | null;
   costs: CropCosts;
   updatedAt: string;
 };
@@ -63,6 +64,7 @@ export type CropCostInput = {
   hidden: Partial<Record<HiddenCostKey, number>>;
   yieldKg: number;
   lossPercent: number;
+  marginPercent: number;
 };
 
 export function emptyCosts(): CropCosts {
@@ -108,7 +110,7 @@ export function priceCrop(crop: Crop, marketPriceMyr: number): PricingResult {
     ...totals,
     yieldKg: crop.yieldKg,
     lossPercent: crop.lossPercent,
-    marginPercent: crop.marginPercent,
+    marginPercent: crop.marginPercent ?? 0,
     marketPriceMyr,
   });
 }

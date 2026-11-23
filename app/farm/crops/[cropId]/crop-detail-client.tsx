@@ -50,7 +50,7 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
     ? preferredMarket(country, crop.commodityId, snapshot, IDR_PER_MYR)
     : null;
   const pricing =
-    commodity && hasCosts && market
+    commodity && hasCosts && market && crop.marginPercent !== null
       ? priceCrop(crop, market.priceMyr)
       : null;
   const localeTag = LOCALE_TAGS[locale];
@@ -93,7 +93,7 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
       ) : (
         <section className="rounded-2xl border border-dashed border-line bg-surface p-5">
           <p className="text-sm leading-relaxed text-ink-muted">
-            {t.farm.costsNotEntered}
+            {hasCosts ? t.farm.marginNeeded : t.farm.costsNotEntered}
           </p>
         </section>
       )}

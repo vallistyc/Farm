@@ -24,7 +24,7 @@ import { LOCALE_TAGS, interpolate } from "@/i18n";
 import { formatAmount, fromMyr, toMyr } from "@/lib/currency";
 import { parseAmount, parseDecimal } from "@/lib/format";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 type HiddenDraft = Partial<Record<HiddenCostKey, string>>;
 
@@ -66,6 +66,11 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
   const [loss, setLoss] = useState(() =>
     String(crop?.lossPercent ?? 10),
   );
+  const [margin, setMargin] = useState(() =>
+    crop?.marginPercent !== null && crop?.marginPercent !== undefined
+      ? String(crop.marginPercent)
+      : "",
+  );
   const [error, setError] = useState<string | null>(null);
 
   if (!user) return null;
@@ -92,12 +97,14 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     t.farm.wizard.labourTitle,
     t.farm.wizard.hiddenTitle,
     t.farm.wizard.yieldTitle,
+    t.farm.wizard.marginTitle,
   ];
   const hints = [
     t.farm.wizard.directHint,
     t.farm.wizard.labourHint,
     t.farm.wizard.hiddenHint,
     t.farm.wizard.yieldHint,
+    t.farm.wizard.marginHint,
   ];
 
   const linesTotal = (lines: CostLineDraft[]) =>
@@ -124,6 +131,18 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
   function handleNext() {
     setError(null);
     if (step < TOTAL_STEPS - 1) {
+      if (step === 3) {
+        const yieldValue = parseDecimal(yieldKg);
+        const lossValue = parseDecimal(loss);
+        if (yieldValue <= 0) {
+          setError(t.farm.wizard.errorYield);
+          return;
+        }
+        if (lossValue < 0 || lossValue > 100) {
+          setError(t.farm.wizard.errorLoss);
+          return;
+        }
+      }
       setStep((current) => current + 1);
       return;
     }
@@ -136,6 +155,11 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     }
     if (lossValue < 0 || lossValue > 100) {
       setError(t.farm.wizard.errorLoss);
+      return;
+    }
+    const marginValue = parseDecimal(margin);
+    if (margin.trim() === "" || marginValue < 0 || marginValue > 100) {
+      setError(t.calc.errorMargin);
       return;
     }
 
@@ -170,6 +194,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       hidden: hiddenValues,
       yieldKg: yieldValue,
       lossPercent: lossValue,
+      marginPercent: marginValue,
     });
     router.push(`/farm/crops/${cropId}`);
   }
@@ -337,6 +362,20 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
               inputMode="decimal"
               suffix="%"
               hint={t.farm.wizard.lossHint}
+            />
+          </div>
+        ) : null}
+
+        {step === 4 ? (
+          <div className="space-y-4">
+            <TextField
+              id="crop-margin"
+              label={t.calc.marginLabel}
+              value={margin}
+              onChange={setMargin}
+              inputMode="decimal"
+              suffix="%"
+              hint={t.calc.marginHint}
             />
             <p className="text-xs leading-relaxed text-ink-muted">
               {t.farm.wizard.savedNote}

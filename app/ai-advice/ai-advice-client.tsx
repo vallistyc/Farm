@@ -95,7 +95,7 @@ export function AiAdviceClient({ cropId }: { cropId?: string }) {
           locale,
           currency,
           crop:
-            crop && totals
+            crop && totals && crop.marginPercent !== null
               ? {
                   commodityId: crop.commodityId,
                   fieldName: farm.getField(crop.fieldId)?.name,

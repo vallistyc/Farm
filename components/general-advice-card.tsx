@@ -23,7 +23,13 @@ import {
   writeCachedAdvice,
 } from "@/lib/advice";
 
-type Stage = "noField" | "noCrop" | "noCosts" | "noYield" | "calc";
+type Stage =
+  | "noField"
+  | "noCrop"
+  | "noCosts"
+  | "noYield"
+  | "noMargin"
+  | "calc";
 type FallbackKey = "fallback_aman" | "fallback_tipis" | "fallback_rugi";
 
 function fallbackText(
@@ -58,7 +64,11 @@ export function GeneralAdviceCard() {
       ? preferredMarket(country, recentCrop.commodityId, snapshot, IDR_PER_MYR)
       : null;
   const pricing =
-    recentCrop && totals && totals.totalCostMyr > 0 && recentCrop.yieldKg > 0
+    recentCrop &&
+    totals &&
+    totals.totalCostMyr > 0 &&
+    recentCrop.yieldKg > 0 &&
+    recentCrop.marginPercent !== null
       ? priceCrop(recentCrop, homeMarket?.priceMyr ?? 0)
       : null;
 
@@ -69,6 +79,7 @@ export function GeneralAdviceCard() {
   else if (!recentCrop) stage = "noCrop";
   else if (!totals || totals.totalCostMyr <= 0) stage = "noCosts";
   else if (recentCrop.yieldKg <= 0) stage = "noYield";
+  else if (recentCrop.marginPercent === null) stage = "noMargin";
   else stage = "calc";
 
   const input = useMemo<GeneralAdviceInput | null>(() => {
@@ -115,7 +126,7 @@ export function GeneralAdviceCard() {
       minimumPriceMyr: pricing.minimumPriceMyr,
       yieldKg: recentCrop.yieldKg,
       lossPercent: recentCrop.lossPercent,
-      marginPercent: recentCrop.marginPercent,
+      marginPercent: recentCrop.marginPercent ?? 0,
       costCategories: categories,
       markets: { MY: toMarket(markets.MY), ID: toMarket(markets.ID) },
     };
@@ -253,6 +264,12 @@ export function GeneralAdviceCard() {
           {stage === "noYield" ? (
             <p className="mt-1 text-sm leading-relaxed">
               {interpolate(t.advice.recordYield, { crop: cropName })}
+            </p>
+          ) : null}
+
+          {stage === "noMargin" ? (
+            <p className="mt-1 text-sm leading-relaxed">
+              {interpolate(t.advice.setMargin, { crop: cropName })}
             </p>
           ) : null}
 

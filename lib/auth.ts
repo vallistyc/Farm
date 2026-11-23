@@ -14,14 +14,17 @@ export type AuthError =
   | "region"
   | "invalid"
   | "exists"
+  | "notConfigured"
   | "network"
   | "unknown";
 
-export type AuthResult = { ok: true } | { ok: false; error: AuthError };
+export type AuthResult =
+  | { ok: true }
+  | { ok: false; error: AuthError; detail?: string };
 
 export type RegisterResult =
   | { ok: true; needsConfirm: boolean }
-  | { ok: false; error: AuthError };
+  | { ok: false; error: AuthError; detail?: string };
 
 export function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

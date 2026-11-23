@@ -15,11 +15,13 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<AuthError | null>(null);
+  const [detail, setDetail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const errorText =
-    error === "name"
+  const errorText = !error
+    ? null
+    : error === "name"
       ? t.register.errorName
       : error === "region"
         ? t.register.errorRegion
@@ -29,11 +31,11 @@ export default function RegisterPage() {
             ? t.register.errorPassword
             : error === "exists"
               ? t.register.errorExists
-              : error === "network"
-                ? t.register.errorNetwork
-                : error
+              : error === "notConfigured"
+                ? t.register.errorNotConfigured
+                : error === "network"
                   ? t.register.errorNetwork
-                  : null;
+                  : detail || t.register.errorGeneric;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,11 +56,13 @@ export default function RegisterPage() {
       return;
     }
     setError(null);
+    setDetail("");
     setBusy(true);
     const result = await register({ name, region, email, password });
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
+      setDetail(result.detail ?? "");
       return;
     }
     if (result.needsConfirm) {

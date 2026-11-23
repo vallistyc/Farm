@@ -50,7 +50,7 @@ export type CropRow = {
   harvest_date: string;
   yield_kg: number;
   loss_percent: number;
-  margin_percent: number;
+  margin_percent: number | null;
   costs: CropCosts;
   updated_at: string;
 };
@@ -157,7 +157,10 @@ export function parseCropRows(rows: unknown[]): Crop[] {
       harvestDate,
       yieldKg: Math.max(0, toNumber(row.yield_kg, 0)),
       lossPercent: toNumber(row.loss_percent, 10),
-      marginPercent: toNumber(row.margin_percent, 10),
+      marginPercent:
+        row.margin_percent === null || row.margin_percent === undefined
+          ? null
+          : toNumber(row.margin_percent, 0),
       costs: parseCosts(row.costs),
       updatedAt: toText(row.updated_at) ?? new Date(0).toISOString(),
     });

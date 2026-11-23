@@ -15,12 +15,7 @@ import { getCommodity } from "@/lib/commodities";
 import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { SAFE_MARGIN_RATIO, type PriceStatus } from "@/lib/pricing";
-import {
-  convertFromMyr,
-  formatAmount,
-  formatMoney,
-  IDR_PER_MYR,
-} from "@/lib/currency";
+import { formatMoney, IDR_PER_MYR } from "@/lib/currency";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
 import { marketSourceLabel } from "@/lib/market-display";
 import {
@@ -70,7 +65,12 @@ export function RecommendationClient({ cropId }: { cropId: string }) {
   const commodity = getCommodity(crop.commodityId);
   const totals = cropCostTotals(crop.costs);
 
-  if (!commodity || totals.totalCostMyr <= 0 || crop.yieldKg <= 0) {
+  if (
+    !commodity ||
+    totals.totalCostMyr <= 0 ||
+    crop.yieldKg <= 0 ||
+    crop.marginPercent === null
+  ) {
     return (
       <div>
         <BackLink href={`/farm/crops/${cropId}`} label={t.calc.backToCrop} />
@@ -259,17 +259,26 @@ function MarketPriceCard({
   name: string;
   localeTag: string;
 }) {
-  const { t } = useSettings();
-  const native = entry.market.nativeCurrency;
+  const { t, currency } = useSettings();
 
-  const minimumNative = convertFromMyr(entry.minimumPriceMyr, native);
-  const safeNative = convertFromMyr(
-    entry.minimumPriceMyr * SAFE_MARGIN_RATIO,
-    native,
+  // Every figure is shown in the farmer's selected currency (converted from the
+  // MYR base), so a Rupiah user sees Rupiah for both the Malaysia and Indonesia
+  // markets. The market name and source still say which market each card is.
+  const marketValue = formatMoney(entry.market.priceMyr, currency, localeTag);
+  const minimumValue = formatMoney(
+    entry.minimumPriceMyr,
+    currency,
+    localeTag,
   );
-  const profitNative = convertFromMyr(
+  const safeValue = formatMoney(
+    entry.minimumPriceMyr * SAFE_MARGIN_RATIO,
+    currency,
+    localeTag,
+  );
+  const profitValue = formatMoney(
     entry.recommendedPriceMyr - entry.costPerUnitMyr,
-    native,
+    currency,
+    localeTag,
   );
   const recommendedOnMarket = entry.status !== "rugi";
 
@@ -289,21 +298,21 @@ function MarketPriceCard({
       <div className="mt-3 space-y-2 text-sm">
         <Row
           label={t.calc.marketPrice}
-          value={formatAmount(entry.market.nativePrice, native, localeTag)}
+          value={marketValue}
           badge={recommendedOnMarket ? badge : undefined}
         />
         <Row
           label={t.calc.minimumPrice}
-          value={formatAmount(minimumNative, native, localeTag)}
+          value={minimumValue}
           badge={recommendedOnMarket ? undefined : badge}
         />
         <Row
           label={t.calc.safePrice}
-          value={formatAmount(safeNative, native, localeTag)}
+          value={safeValue}
         />
         <Row
           label={t.calc.profitPerKg}
-          value={formatAmount(profitNative, native, localeTag)}
+          value={profitValue}
         />
       </div>
 

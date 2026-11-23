@@ -103,7 +103,7 @@ export function useFarm(userId: string | undefined) {
         harvestDate: input.harvestDate,
         yieldKg: 0,
         lossPercent: 10,
-        marginPercent: 10,
+        marginPercent: null,
         costs: emptyCosts(),
         updatedAt: new Date().toISOString(),
       };
@@ -128,6 +128,7 @@ export function useFarm(userId: string | undefined) {
                 },
                 yieldKg: input.yieldKg,
                 lossPercent: input.lossPercent,
+                marginPercent: input.marginPercent,
                 updatedAt: new Date().toISOString(),
               }
             : crop,
