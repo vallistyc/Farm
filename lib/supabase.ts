@@ -23,6 +23,20 @@ export function getSupabase(): SupabaseClient {
   return client;
 }
 
+/**
+ * Where Supabase should land the user after they confirm their email.
+ * Prefers the configured public site URL (production), else the current
+ * origin (so local dev still works). Must be an allowed Redirect URL in the
+ * Supabase dashboard, otherwise Supabase falls back to its Site URL.
+ */
+export function authRedirectUrl(): string | undefined {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  const base = configured ||
+    (typeof window !== "undefined" ? window.location.origin.replace(/\/+$/, "") : "");
+  if (!base) return undefined;
+  return `${base}/home`;
+}
+
 /** Current signed-in access token, or null when there is no session. */
 export async function getAccessToken(): Promise<string | null> {
   if (!isSupabaseConfigured) return null;

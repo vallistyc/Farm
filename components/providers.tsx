@@ -36,7 +36,7 @@ import {
   type Farmer,
   type RegisterResult,
 } from "@/lib/auth";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { authRedirectUrl, getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { createLocalStore } from "@/lib/local-store";
 import {
   getFarmData,
@@ -287,6 +287,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         password: input.password,
         options: {
           data: { name: input.name.trim(), region: input.region.trim() },
+          emailRedirectTo: authRedirectUrl(),
         },
       });
       if (error) {
