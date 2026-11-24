@@ -6,6 +6,7 @@ import { useAuth, useSettings } from "@/components/providers";
 import { useFarm } from "@/lib/farm-store";
 import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, latestCrop, priceCrop } from "@/lib/farm";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { IDR_PER_MYR } from "@/lib/currency";
 import { preferredMarket, resolveMarkets } from "@/lib/market-context";
 import { interpolate } from "@/i18n";
@@ -51,6 +52,7 @@ export function GeneralAdviceCard() {
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const snapshot = useMarketPrices();
+  const { custom } = useCommodityCatalog();
 
   const fields = farm.data.fields;
   const crops = farm.data.crops;
@@ -72,7 +74,13 @@ export function GeneralAdviceCard() {
       ? priceCrop(recentCrop, homeMarket?.priceMyr ?? 0)
       : null;
 
-  const cropName = recentCrop ? t.commodities[recentCrop.commodityId] : "";
+  const cropName = recentCrop
+    ? resolveCommodityName(
+        recentCrop.commodityId,
+        custom,
+        t.commodities as Record<string, string>,
+      )
+    : "";
 
   let stage: Stage;
   if (fields.length === 0) stage = "noField";
@@ -118,6 +126,7 @@ export function GeneralAdviceCard() {
 
     return {
       commodityId: recentCrop.commodityId,
+      commodityName: cropName,
       language: locale,
       displayCurrency: currency,
       status: pricing.status,
@@ -130,7 +139,7 @@ export function GeneralAdviceCard() {
       costCategories: categories,
       markets: { MY: toMarket(markets.MY), ID: toMarket(markets.ID) },
     };
-  }, [stage, recentCrop, totals, pricing, markets, locale, currency]);
+  }, [stage, recentCrop, totals, pricing, markets, locale, currency, cropName]);
 
   const inputHash = input ? hashAdviceInput(input) : "";
   const cropId = recentCrop?.id ?? "";

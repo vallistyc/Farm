@@ -10,7 +10,7 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
-import { getCommodity } from "@/lib/commodities";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
@@ -25,6 +25,7 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
   const farm = useFarm(user?.id);
   const crop = user ? farm.getCrop(cropId) : undefined;
   const snapshot = useMarketPrices();
+  const { custom } = useCommodityCatalog();
 
   if (!user) return null;
 
@@ -43,16 +44,22 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
   }
 
   const field = farm.getField(crop.fieldId);
-  const commodity = getCommodity(crop.commodityId);
   const totals = cropCostTotals(crop.costs);
   const hasCosts = totals.totalCostMyr > 0;
-  const market = commodity
-    ? preferredMarket(country, crop.commodityId, snapshot, IDR_PER_MYR)
-    : null;
-  const pricing =
-    commodity && hasCosts && market && crop.marginPercent !== null
-      ? priceCrop(crop, market.priceMyr)
-      : null;
+  const priceable =
+    hasCosts && crop.yieldKg > 0 && crop.marginPercent !== null;
+  const market = preferredMarket(
+    country,
+    crop.commodityId,
+    snapshot,
+    IDR_PER_MYR,
+  );
+  const pricing = market && priceable ? priceCrop(crop, market.priceMyr) : null;
+  const cropName = resolveCommodityName(
+    crop.commodityId,
+    custom,
+    t.commodities as Record<string, string>,
+  );
   const localeTag = LOCALE_TAGS[locale];
 
   return (
@@ -61,7 +68,7 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
 
       <header className="pb-4 pt-1">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {t.commodities[crop.commodityId]}
+          {cropName}
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           {interpolate(t.farm.cropMeta, {
@@ -93,7 +100,11 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
       ) : (
         <section className="rounded-2xl border border-dashed border-line bg-surface p-5">
           <p className="text-sm leading-relaxed text-ink-muted">
-            {hasCosts ? t.farm.marginNeeded : t.farm.costsNotEntered}
+            {!hasCosts
+              ? t.farm.costsNotEntered
+              : crop.marginPercent === null
+                ? t.farm.marginNeeded
+                : t.farm.marketNoData}
           </p>
         </section>
       )}
@@ -148,7 +159,7 @@ export function CropDetailClient({ cropId }: { cropId: string }) {
         >
           {hasCosts ? t.farm.editCosts : t.farm.inputCosts}
         </Link>
-        {pricing ? (
+        {priceable ? (
           <Link
             href={`/farm/crops/${crop.id}/recommendation`}
             className={SECONDARY_BUTTON}

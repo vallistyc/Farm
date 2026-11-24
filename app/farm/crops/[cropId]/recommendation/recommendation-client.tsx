@@ -11,7 +11,7 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
-import { getCommodity } from "@/lib/commodities";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { SAFE_MARGIN_RATIO, type PriceStatus } from "@/lib/pricing";
@@ -45,6 +45,7 @@ export function RecommendationClient({ cropId }: { cropId: string }) {
   const farm = useFarm(user?.id);
   const crop = user ? farm.getCrop(cropId) : undefined;
   const snapshot = useMarketPrices();
+  const { custom } = useCommodityCatalog();
 
   if (!user) return null;
 
@@ -62,11 +63,14 @@ export function RecommendationClient({ cropId }: { cropId: string }) {
     );
   }
 
-  const commodity = getCommodity(crop.commodityId);
   const totals = cropCostTotals(crop.costs);
+  const cropName = resolveCommodityName(
+    crop.commodityId,
+    custom,
+    t.commodities as Record<string, string>,
+  );
 
   if (
-    !commodity ||
     totals.totalCostMyr <= 0 ||
     crop.yieldKg <= 0 ||
     crop.marginPercent === null
@@ -140,7 +144,7 @@ export function RecommendationClient({ cropId }: { cropId: string }) {
 
       <header className="pb-4 pt-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-          {t.commodities[crop.commodityId]}
+          {cropName}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {t.calc.resultTitle}
@@ -174,7 +178,7 @@ export function RecommendationClient({ cropId }: { cropId: string }) {
         {entries.length === 0 ? (
           <p className="rounded-2xl border border-line bg-surface p-4 text-sm text-ink-muted">
             {interpolate(t.calc.marketUnavailable, {
-              commodity: t.commodities[crop.commodityId],
+              commodity: cropName,
               market: `${t.radar.malaysiaTitle} · ${t.radar.indonesiaTitle}`,
             })}
           </p>

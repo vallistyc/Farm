@@ -141,7 +141,7 @@ test("parseFarmRows skips invalid rows and coerces numbers", () => {
   ]);
 });
 
-test("parseCropRows skips invalid commodity or missing fields", () => {
+test("parseCropRows keeps custom commodity ids but skips missing fields or empty commodity", () => {
   const crops = parseCropRows([
     {
       id: "crop-1",
@@ -158,7 +158,7 @@ test("parseCropRows skips invalid commodity or missing fields", () => {
     {
       id: "crop-2",
       farm_id: "field-1",
-      commodity_id: "unknown",
+      commodity_id: "terong",
       planting_date: "2026-01-01",
       harvest_date: "2026-02-01",
     },
@@ -168,12 +168,20 @@ test("parseCropRows skips invalid commodity or missing fields", () => {
       commodity_id: "padi",
       planting_date: "2026-01-01",
     },
+    {
+      id: "crop-4",
+      farm_id: "field-1",
+      commodity_id: "   ",
+      planting_date: "2026-01-01",
+      harvest_date: "2026-02-01",
+    },
   ]);
 
-  assert.equal(crops.length, 1);
+  assert.equal(crops.length, 2);
   assert.equal(crops[0].yieldKg, 120);
   assert.equal(crops[0].marginPercent, 15);
   assert.deepEqual(crops[0].costs.hidden, { transport: 40 });
+  assert.equal(crops[1].commodityId, "terong");
 });
 
 test("parseCropRows drops malformed cost lines but keeps valid ones", () => {

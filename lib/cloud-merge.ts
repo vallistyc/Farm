@@ -8,15 +8,9 @@ import type {
   HiddenCostKey,
 } from "@/lib/farm";
 
-// Kept in sync with the types by Record<> exhaustiveness so a missing or extra
-// id fails the type check.
-const COMMODITY_IDS: Record<CommodityId, true> = {
-  padi: true,
-  maize: true,
-  spinach: true,
-  chilli: true,
-  banana: true,
-};
+// Commodity ids are open-ended (built-ins plus farmer-added custom names), so
+// any non-empty string is a valid id. Custom commodities simply have no market
+// data and show "Data Komoditas Tidak Tersedia" in the comparison.
 
 const HIDDEN_COST_KEYS: Record<HiddenCostKey, true> = {
   transport: true,
@@ -69,10 +63,7 @@ function toText(value: unknown): string | undefined {
 }
 
 function isCommodityId(value: unknown): value is CommodityId {
-  return (
-    typeof value === "string" &&
-    Object.prototype.hasOwnProperty.call(COMMODITY_IDS, value)
-  );
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function parseCostLines(raw: unknown): CostLine[] {

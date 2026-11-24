@@ -179,6 +179,12 @@ const ms: Dictionary = {
     editCosts: "Kemas kini kos",
     costsNotEntered: "Kos belum diisi.",
     marginNeeded: "Masukkan margin keuntungan anda untuk melihat cadangan harga.",
+    marketNoData:
+      "Data Komoditi Tidak Tersedia — harga pasaran belum tersedia untuk komoditi ini.",
+    manageCommodities: "Urus komoditi",
+    addNewCommodity: "➕ Tambah komoditi lain",
+    newCommodityLabel: "Nama komoditi baharu",
+    newCommodityPlaceholder: "cth. Terung, Durian",
     yieldShort: "Hasil",
     lossShort: "Susut",
     nextStep: "Lihat syor harga",
@@ -284,7 +290,8 @@ const ms: Dictionary = {
     comparisonTitle: "Harga pasaran vs harga minimum",
     targetMarket: "Pasaran untuk syor ini",
     heroFor: "Harga cadangan jika anda jual di {market}",
-    marketUnavailable: "Tiada harga rasmi {commodity} dari {market} buat masa ini.",
+    marketUnavailable:
+      "Data Komoditi Tidak Tersedia — belum ada harga rasmi {commodity} di {market}.",
     marketFallback:
       "{market} tidak menerbitkan komoditi ini. Harga minimum anda ditunjukkan di atas; semak {other} sebagai rujukan.",
     compareTitle: "Bandingkan kedua-dua pasaran",
@@ -306,6 +313,23 @@ const ms: Dictionary = {
     askAi: "Tanya AI",
     updateMargin: "Ubah margin",
     backToCrop: "Kembali ke tanaman",
+  },
+  catalog: {
+    title: "Urus komoditi",
+    description:
+      "Pilih daripada komoditi terbina dalam atau tambah milik anda sendiri.",
+    builtInTitle: "Komoditi terbina dalam",
+    builtInNote: "Ini mempunyai data harga pasaran dan tidak boleh dibuang.",
+    hasMarket: "Ada data pasaran",
+    customTitle: "Komoditi anda",
+    customNote:
+      "Tambah apa sahaja yang anda tanam. Harga pasaran mungkin belum tersedia untuk ini.",
+    addLabel: "Nama komoditi",
+    addPlaceholder: "cth. Terung",
+    addButton: "Tambah komoditi",
+    remove: "Buang",
+    empty: "Anda belum menambah sebarang komoditi.",
+    errorName: "Masukkan nama komoditi.",
   },
   radar: {
     title: "Radar Harga",

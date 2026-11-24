@@ -12,6 +12,7 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS } from "@/i18n";
 import { formatMoney } from "@/lib/currency";
@@ -23,6 +24,7 @@ export function PriceCalculatorClient({ cropId }: { cropId: string }) {
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const crop = user ? farm.getCrop(cropId) : undefined;
+  const { custom } = useCommodityCatalog();
 
   const [margin, setMargin] = useState(() =>
     String(crop?.marginPercent ?? 10),
@@ -72,7 +74,11 @@ export function PriceCalculatorClient({ cropId }: { cropId: string }) {
 
       <header className="pb-4 pt-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-brand">
-          {t.commodities[crop.commodityId]}
+          {resolveCommodityName(
+            crop.commodityId,
+            custom,
+            t.commodities as Record<string, string>,
+          )}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {t.calc.title}

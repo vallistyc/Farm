@@ -179,6 +179,12 @@ const id: Dictionary = {
     editCosts: "Perbarui biaya",
     costsNotEntered: "Biaya belum diisi.",
     marginNeeded: "Isi margin keuntungan untuk melihat rekomendasi harga.",
+    marketNoData:
+      "Data Komoditas Tidak Tersedia — harga pasar belum tersedia untuk komoditas ini.",
+    manageCommodities: "Kelola komoditas",
+    addNewCommodity: "➕ Tambah komoditas lain",
+    newCommodityLabel: "Nama komoditas baru",
+    newCommodityPlaceholder: "mis. Terong, Durian",
     yieldShort: "Hasil",
     lossShort: "Susut",
     nextStep: "Lihat rekomendasi harga",
@@ -284,7 +290,7 @@ const id: Dictionary = {
     targetMarket: "Pasar acuan rekomendasi",
     heroFor: "Harga saran jika kamu jual di {market}",
     marketUnavailable:
-      "Harga resmi {commodity} dari {market} belum tersedia saat ini.",
+      "Data Komoditas Tidak Tersedia — belum ada harga resmi {commodity} di {market}.",
     marketFallback:
       "{market} tidak menerbitkan komoditas ini. Harga minimummu ditampilkan di atas; pakai {other} sebagai pembanding.",
     compareTitle: "Bandingkan dua pasar",
@@ -306,6 +312,22 @@ const id: Dictionary = {
     askAi: "Tanya AI",
     updateMargin: "Ubah margin",
     backToCrop: "Kembali ke tanaman",
+  },
+  catalog: {
+    title: "Kelola komoditas",
+    description: "Pilih dari komoditas bawaan atau tambahkan milikmu sendiri.",
+    builtInTitle: "Komoditas bawaan",
+    builtInNote: "Ini punya data harga pasar dan tidak bisa dihapus.",
+    hasMarket: "Punya data pasar",
+    customTitle: "Komoditas kamu",
+    customNote:
+      "Tambahkan apa pun yang kamu tanam. Harga pasar mungkin belum tersedia untuk ini.",
+    addLabel: "Nama komoditas",
+    addPlaceholder: "mis. Terong",
+    addButton: "Tambah komoditas",
+    remove: "Hapus",
+    empty: "Kamu belum menambahkan komoditas apa pun.",
+    errorName: "Masukkan nama komoditas.",
   },
   radar: {
     title: "Radar Harga",

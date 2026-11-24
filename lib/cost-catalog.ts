@@ -1,4 +1,4 @@
-import type { CommodityId } from "@/lib/commodities";
+import type { BuiltInCommodityId, CommodityId } from "@/lib/commodities";
 
 export const DIRECT_COST_KEYS = [
   "seeds",
@@ -23,7 +23,7 @@ export type DirectCostKey = (typeof DIRECT_COST_KEYS)[number];
 export type LabourCostKey = (typeof LABOUR_COST_KEYS)[number];
 
 export const DIRECT_COST_SUGGESTIONS: Record<
-  CommodityId,
+  BuiltInCommodityId,
   readonly DirectCostKey[]
 > = {
   padi: ["seeds", "fertiliser", "pesticide", "lime"],
@@ -32,6 +32,21 @@ export const DIRECT_COST_SUGGESTIONS: Record<
   chilli: ["seeds", "fertiliser", "compost", "pesticide", "mulch", "stakes"],
   banana: ["seeds", "compost", "fertiliser", "pesticide", "stakes"],
 };
+
+const DEFAULT_DIRECT_COST_SUGGESTIONS: readonly DirectCostKey[] = [
+  "seeds",
+  "fertiliser",
+  "pesticide",
+];
+
+export function directCostSuggestionsFor(
+  commodityId: CommodityId,
+): readonly DirectCostKey[] {
+  return (
+    DIRECT_COST_SUGGESTIONS[commodityId as BuiltInCommodityId] ??
+    DEFAULT_DIRECT_COST_SUGGESTIONS
+  );
+}
 
 export const LABOUR_COST_SUGGESTIONS: readonly LabourCostKey[] =
   LABOUR_COST_KEYS;

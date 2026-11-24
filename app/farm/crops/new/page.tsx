@@ -12,6 +12,7 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { COMMODITIES, type CommodityId } from "@/lib/commodities";
+import { useCommodityCatalog } from "@/lib/commodity-store";
 import { useFarm } from "@/lib/farm-store";
 
 type CropErrors = {
@@ -30,9 +31,11 @@ export default function NewCropPage() {
   const { t } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
+  const { custom, add } = useCommodityCatalog();
 
   const [fieldId, setFieldId] = useState("");
   const [commodityId, setCommodityId] = useState("");
+  const [newName, setNewName] = useState("");
   const [plantingDate, setPlantingDate] = useState(todayIso);
   const [harvestDate, setHarvestDate] = useState("");
   const [errors, setErrors] = useState<CropErrors>({});
@@ -65,7 +68,18 @@ export default function NewCropPage() {
     if (!fields.some((field) => field.id === fieldId)) {
       nextErrors.field = t.farm.errorCropField;
     }
-    if (!COMMODITIES.some((item) => item.id === commodityId)) {
+    let finalId = commodityId;
+    if (commodityId === "__new__") {
+      const created = add(newName);
+      if (!created) {
+        nextErrors.commodity = t.farm.errorCropCommodity;
+      } else {
+        finalId = created.id;
+      }
+    } else if (
+      !COMMODITIES.some((item) => item.id === commodityId) &&
+      !custom.some((item) => item.id === commodityId)
+    ) {
       nextErrors.commodity = t.farm.errorCropCommodity;
     }
     if (!plantingDate) nextErrors.planting = t.farm.errorPlanting;
@@ -78,7 +92,7 @@ export default function NewCropPage() {
 
     const crop = farm.addCrop({
       fieldId,
-      commodityId: commodityId as CommodityId,
+      commodityId: finalId as CommodityId,
       plantingDate,
       harvestDate,
     });
@@ -126,7 +140,25 @@ export default function NewCropPage() {
               {t.commodities[commodity.id]}
             </option>
           ))}
+          {custom.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+          <option value="__new__">{t.farm.addNewCommodity}</option>
         </SelectField>
+        {commodityId === "__new__" ? (
+          <TextField
+            id="crop-commodity-new"
+            label={t.farm.newCommodityLabel}
+            value={newName}
+            onChange={(value) => {
+              setNewName(value);
+              setErrors((current) => ({ ...current, commodity: undefined }));
+            }}
+            placeholder={t.farm.newCommodityPlaceholder}
+          />
+        ) : null}
 
         <TextField
           id="crop-planting"

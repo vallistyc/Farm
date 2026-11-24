@@ -2,6 +2,7 @@ import type { CommodityId } from "@/lib/commodities";
 import type { CurrencyCode } from "@/lib/currency";
 import type {
   IndonesiaCommodityId,
+  MarketCommodityId,
   MarketSnapshot,
   MarketSource,
 } from "@/lib/market";
@@ -75,7 +76,7 @@ export function resolveMarket(
   idrPerMyr: number,
 ): ResolvedMarket | null {
   if (country === "MY") {
-    const quote = snapshot.quotes[commodityId];
+    const quote = snapshot.quotes[commodityId as MarketCommodityId];
     if (!quote || !Number.isFinite(quote.priceMyr) || quote.priceMyr <= 0) {
       return null;
     }

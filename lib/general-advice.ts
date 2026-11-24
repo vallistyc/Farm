@@ -1,6 +1,5 @@
 import { isLocale, LOCALE_TAGS, type Locale } from "@/i18n";
-import en from "@/i18n/en";
-import { getCommodity, type CommodityId } from "@/lib/commodities";
+import type { CommodityId } from "@/lib/commodities";
 import { formatMoney, isCurrency, type CurrencyCode } from "@/lib/currency";
 import type { PriceStatus } from "@/lib/pricing";
 
@@ -20,6 +19,7 @@ export type MarketInput = {
 
 export type GeneralAdviceInput = {
   commodityId: CommodityId;
+  commodityName: string;
   language: Locale;
   displayCurrency: CurrencyCode;
   status: PriceStatus;
@@ -78,11 +78,13 @@ export function parseGeneralAdviceInput(
   if (!raw || typeof raw !== "object") return null;
   const body = raw as Record<string, unknown>;
 
-  const commodity =
-    typeof body.commodityId === "string"
-      ? getCommodity(body.commodityId)
-      : undefined;
-  if (!commodity) return null;
+  if (typeof body.commodityId !== "string" || !body.commodityId.trim())
+    return null;
+  const commodityId = body.commodityId.trim().slice(0, 60);
+  const commodityName =
+    typeof body.commodityName === "string" && body.commodityName.trim()
+      ? body.commodityName.trim().slice(0, 60)
+      : commodityId;
   if (!isLocale(body.language)) return null;
 
   const status = body.status;
@@ -130,7 +132,8 @@ export function parseGeneralAdviceInput(
       : {};
 
   return {
-    commodityId: commodity.id,
+    commodityId,
+    commodityName,
     language: body.language,
     displayCurrency,
     status,
@@ -166,7 +169,7 @@ export function buildGeneralSystemPrompt(locale: Locale): string {
 }
 
 export function buildGeneralUserPrompt(input: GeneralAdviceInput): string {
-  const label = en.commodities[input.commodityId] ?? input.commodityId;
+  const label = input.commodityName;
   const localeTag = LOCALE_TAGS[input.language];
   // Costs are stored in MYR; render them in the farmer's own display currency
   // (IDR for an Indonesian farmer, MYR for a Malaysian one) so the advice reads

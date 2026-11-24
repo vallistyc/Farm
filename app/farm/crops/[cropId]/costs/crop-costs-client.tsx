@@ -13,7 +13,7 @@ import {
   type CostLineDraft,
 } from "@/components/farm/cost-lines-editor";
 import {
-  DIRECT_COST_SUGGESTIONS,
+  directCostSuggestionsFor,
   LABOUR_COST_SUGGESTIONS,
   type DirectCostKey,
   type LabourCostKey,
@@ -251,7 +251,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
         {step === 0 ? (
           <>
             <CostSuggestions
-              keys={DIRECT_COST_SUGGESTIONS[crop.commodityId]}
+              keys={directCostSuggestionsFor(crop.commodityId)}
               lines={direct}
               onAdd={(label) =>
                 setDirect((current) => [

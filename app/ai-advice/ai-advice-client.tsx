@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { PRIMARY_BUTTON } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
 import { getCommodity } from "@/lib/commodities";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { useMarketPrices } from "@/components/market-prices";
 import { cropCostTotals, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS } from "@/i18n";
@@ -30,6 +31,7 @@ export function AiAdviceClient({ cropId }: { cropId?: string }) {
   const crop = cropId ? farm.getCrop(cropId) : undefined;
   const commodity = crop ? getCommodity(crop.commodityId) : undefined;
   const snapshot = useMarketPrices();
+  const { custom } = useCommodityCatalog();
   const market =
     crop && commodity
       ? preferredMarket(country, crop.commodityId, snapshot, IDR_PER_MYR)
@@ -195,7 +197,11 @@ export function AiAdviceClient({ cropId }: { cropId?: string }) {
                 {t.ai.contextTitle}
               </p>
               <p className="mt-0.5 truncate text-sm font-semibold">
-                {t.commodities[crop.commodityId]}
+                {resolveCommodityName(
+                  crop.commodityId,
+                  custom,
+                  t.commodities as Record<string, string>,
+                )}
               </p>
               {pricing ? (
                 <>

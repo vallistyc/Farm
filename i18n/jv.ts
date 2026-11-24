@@ -180,6 +180,12 @@ const jv: Dictionary = {
     editCosts: "Anyari biaya",
     costsNotEntered: "Biaya durung diisi.",
     marginNeeded: "Isi margin bathi kanggo ndeleng rekomendasi rega.",
+    marketNoData:
+      "Data Komoditas Ora Kasedia — rega pasar durung kasedia kanggo komoditas iki.",
+    manageCommodities: "Atur komoditas",
+    addNewCommodity: "➕ Tambah komoditas liyane",
+    newCommodityLabel: "Jeneng komoditas anyar",
+    newCommodityPlaceholder: "tuladhane Terong, Durian",
     yieldShort: "Asil",
     lossShort: "Susut",
     nextStep: "Deleng saran rega",
@@ -284,7 +290,8 @@ const jv: Dictionary = {
     comparisonTitle: "Rega pasar vs rega minimal",
     targetMarket: "Pasar kanggo saran iki",
     heroFor: "Rega yen kowe ngedol ing {market}",
-    marketUnavailable: "Ora ana rega resmi {commodity} saka {market} saiki.",
+    marketUnavailable:
+      "Data Komoditas Ora Kasedia — durung ana rega resmi {commodity} ing {market}.",
     marketFallback:
       "{market} ora nerbitake komoditas iki. Rega minimalmu katon ing ndhuwur; deleng {other} kanggo referensi.",
     compareTitle: "Bandingake loro pasar",
@@ -306,6 +313,22 @@ const jv: Dictionary = {
     askAi: "Takon AI",
     updateMargin: "Ganti margin",
     backToCrop: "Bali menyang tanaman",
+  },
+  catalog: {
+    title: "Atur komoditas",
+    description: "Pilih saka komoditas bawaan utawa tambahake duwekmu dhewe.",
+    builtInTitle: "Komoditas bawaan",
+    builtInNote: "Iki duwe data rega pasar lan ora bisa dibusek.",
+    hasMarket: "Duwe data pasar",
+    customTitle: "Komoditasmu",
+    customNote:
+      "Tambah apa wae sing kowe tanemi. Rega pasar bisa wae durung kasedia kanggo iki.",
+    addLabel: "Jeneng komoditas",
+    addPlaceholder: "tuladhane Terong",
+    addButton: "Tambah komoditas",
+    remove: "Busak",
+    empty: "Kowe durung nambah komoditas apa wae.",
+    errorName: "Ketik jeneng komoditas.",
   },
   radar: {
     title: "Radar Rega",

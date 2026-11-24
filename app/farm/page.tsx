@@ -9,6 +9,7 @@ import {
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { cropCostTotals } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
 import { formatMoney } from "@/lib/currency";
@@ -18,6 +19,7 @@ export default function FarmPage() {
   const { t, locale, currency } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
+  const { custom } = useCommodityCatalog();
 
   if (!user) return null;
 
@@ -34,6 +36,9 @@ export default function FarmPage() {
         </Link>
         <Link href="/farm/crops/new" className={`${SECONDARY_BUTTON} text-sm`}>
           {t.farm.addCrop}
+        </Link>
+        <Link href="/farm/commodities" className={`${SECONDARY_BUTTON} text-sm`}>
+          {t.farm.manageCommodities}
         </Link>
       </div>
 
@@ -89,7 +94,11 @@ export default function FarmPage() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-semibold">
-                              {t.commodities[crop.commodityId]}
+                              {resolveCommodityName(
+                                crop.commodityId,
+                                custom,
+                                t.commodities as Record<string, string>,
+                              )}
                             </span>
                             <span className="line-clamp-2 text-xs text-ink-muted">
                               {interpolate(t.farm.cropMeta, {

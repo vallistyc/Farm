@@ -8,6 +8,7 @@ import { GlyphIcon, type ActionIconName } from "@/components/icons";
 import { StatusBadge } from "@/components/status-badge";
 import { useFarm } from "@/lib/farm-store";
 import { getCommodity } from "@/lib/commodities";
+import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { useMarketPrices } from "@/components/market-prices";
 import { latestCrop, latestPriceableCrop, priceCrop } from "@/lib/farm";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
@@ -27,6 +28,7 @@ export default function HomePage() {
   const farm = useFarm(user?.id);
   const localeTag = LOCALE_TAGS[locale];
   const snapshot = useMarketPrices();
+  const { custom } = useCommodityCatalog();
   const pricedCrop = latestPriceableCrop(farm.data.crops);
   const pricedMarket = pricedCrop
     ? preferredMarket(country, pricedCrop.commodityId, snapshot, IDR_PER_MYR)
@@ -96,7 +98,11 @@ export default function HomePage() {
               {t.home.latestCrop}
             </p>
             <p className="text-base font-semibold">
-              {t.commodities[pricedCrop.commodityId]}
+              {resolveCommodityName(
+                pricedCrop.commodityId,
+                custom,
+                t.commodities as Record<string, string>,
+              )}
             </p>
             <p className="mt-3 text-xs text-ink-muted">
               {t.home.recommendedLabel}

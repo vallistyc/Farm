@@ -1,7 +1,27 @@
-export type CommodityId = "padi" | "maize" | "spinach" | "chilli" | "banana";
+export type BuiltInCommodityId =
+  | "padi"
+  | "maize"
+  | "spinach"
+  | "chilli"
+  | "banana";
+
+/** Built-in ids keep autocomplete; custom ids are any other non-empty string. */
+export type CommodityId = BuiltInCommodityId | (string & {});
+
+export const BUILT_IN_COMMODITY_IDS: BuiltInCommodityId[] = [
+  "padi",
+  "maize",
+  "spinach",
+  "chilli",
+  "banana",
+];
+
+export function isBuiltInCommodity(id: string): id is BuiltInCommodityId {
+  return (BUILT_IN_COMMODITY_IDS as string[]).includes(id);
+}
 
 export type Commodity = {
-  id: CommodityId;
+  id: BuiltInCommodityId;
   unit: "kg";
   trendStart: string;
   trendMyr: number[];
@@ -10,7 +30,7 @@ export type Commodity = {
 import rawCommodities from "@/data/commodities.json";
 
 export const COMMODITIES: Commodity[] = rawCommodities.map((item) => ({
-  id: item.id as CommodityId,
+  id: item.id as BuiltInCommodityId,
   unit: item.unit as Commodity["unit"],
   trendStart: item.trendStart,
   trendMyr: item.trendMyr,
