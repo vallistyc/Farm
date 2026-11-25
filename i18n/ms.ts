@@ -197,6 +197,8 @@ const ms: Dictionary = {
       stepOf: "Langkah {step} daripada {total}",
       directTitle: "Kos langsung",
       directHint: "Benih, baja, racun, dan bahan lain.",
+      directNote:
+        "Perhatian: sila pastikan kos yang dimasukkan berdasarkan tempoh tarikh yang diisi pada halaman sebelumnya.",
       labourTitle: "Kos buruh",
       labourHint:
         "Pekerja yang anda bayar untuk menanam, menyembur, dan menuai.",

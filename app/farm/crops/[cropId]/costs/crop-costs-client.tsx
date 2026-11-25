@@ -250,6 +250,9 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       <div className="mt-5">
         {step === 0 ? (
           <>
+            <p className="mb-4 rounded-xl border border-tipis/30 bg-tipis/10 px-3 py-2 text-xs font-medium leading-relaxed text-tipis">
+              {t.farm.wizard.directNote}
+            </p>
             <CostSuggestions
               keys={directCostSuggestionsFor(crop.commodityId)}
               lines={direct}

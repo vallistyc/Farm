@@ -195,6 +195,8 @@ const en = {
       stepOf: "Step {step} of {total}",
       directTitle: "Direct costs",
       directHint: "Seeds, fertiliser, pesticide, and other materials.",
+      directNote:
+        "Take note: please ensure the cost you enter is based on the date period entered on the previous page.",
       labourTitle: "Labour costs",
       labourHint: "Workers you pay for planting, spraying, and harvesting.",
       hiddenTitle: "Hidden costs",

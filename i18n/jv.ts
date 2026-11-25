@@ -198,6 +198,8 @@ const jv: Dictionary = {
       stepOf: "Langkah {step} saka {total}",
       directTitle: "Biaya langsung",
       directHint: "Wiji, pupuk, obat hama, lan bahan liyane.",
+      directNote:
+        "Wigati: mesthekake biaya sing kowe isi adhedhasar periode tanggal sing diisi ing kaca sadurunge.",
       labourTitle: "Biaya tenaga kerja",
       labourHint:
         "Buruh sing mbok bayar kanggo tandur, semprot, lan panen.",

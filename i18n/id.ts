@@ -197,6 +197,8 @@ const id: Dictionary = {
       stepOf: "Langkah {step} dari {total}",
       directTitle: "Biaya langsung",
       directHint: "Benih, pupuk, pestisida, dan bahan lain.",
+      directNote:
+        "Catatan: pastikan biaya yang kamu isi sesuai periode tanggal yang diisi di halaman sebelumnya.",
       labourTitle: "Biaya tenaga kerja",
       labourHint:
         "Pekerja yang kamu bayar untuk tanam, semprot, dan panen.",
