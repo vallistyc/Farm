@@ -8,6 +8,8 @@ export type CostLineDraft = {
   id: string;
   label: string;
   amount: string;
+  qty?: string;
+  unit?: string;
 };
 
 export function makeCostLine(): CostLineDraft {
@@ -15,17 +17,19 @@ export function makeCostLine(): CostLineDraft {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return { id, label: "", amount: "" };
+  return { id, label: "", amount: "", qty: "", unit: "" };
 }
 
 export function CostLinesEditor({
   lines,
   onChange,
   labelPlaceholder,
+  showQuantity = false,
 }: {
   lines: CostLineDraft[];
   onChange: (lines: CostLineDraft[]) => void;
   labelPlaceholder: string;
+  showQuantity?: boolean;
 }) {
   const { t, currency } = useSettings();
 
@@ -64,6 +68,24 @@ export function CostLinesEditor({
               inputMode="decimal"
               suffix={currency}
             />
+            {showQuantity ? (
+              <div className="grid grid-cols-2 gap-3">
+                <TextField
+                  id={`${line.id}-qty`}
+                  label={t.farm.wizard.lineQty}
+                  value={line.qty ?? ""}
+                  onChange={(value) => updateLine(line.id, { qty: value })}
+                  inputMode="decimal"
+                />
+                <TextField
+                  id={`${line.id}-unit`}
+                  label={t.farm.wizard.lineUnit}
+                  value={line.unit ?? ""}
+                  onChange={(value) => updateLine(line.id, { unit: value })}
+                  placeholder={t.farm.wizard.lineUnitPlaceholder}
+                />
+              </div>
+            ) : null}
           </div>
           <button
             type="button"

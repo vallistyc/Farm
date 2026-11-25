@@ -74,11 +74,18 @@ function parseCostLines(raw: unknown): CostLine[] {
     const line = item as Record<string, unknown>;
     const label = toText(line.label);
     if (!label) continue;
-    lines.push({
+    const parsed: CostLine = {
       id: toText(line.id) ?? `line-${lines.length + 1}`,
       label,
       amountMyr: toNumber(line.amountMyr, 0),
-    });
+    };
+    const qty = toNumber(line.qty, Number.NaN);
+    if (Number.isFinite(qty) && qty > 0) {
+      parsed.qty = qty;
+      const unit = toText(line.unit);
+      if (unit) parsed.unit = unit;
+    }
+    lines.push(parsed);
   }
   return lines;
 }

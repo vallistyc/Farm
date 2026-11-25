@@ -24,6 +24,10 @@ export type CostLine = {
   id: string;
   label: string;
   amountMyr: number;
+  /** Optional purchase quantity, used for direct costs only. */
+  qty?: number;
+  /** Optional unit label for qty, e.g. "kg", "pcs", "pack". */
+  unit?: string;
 };
 
 export type CropCosts = {

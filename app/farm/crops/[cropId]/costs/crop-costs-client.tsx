@@ -41,6 +41,8 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       id: line.id,
       label: line.label,
       amount: String(fromMyr(line.amountMyr, currency)),
+      qty: line.qty !== undefined ? String(line.qty) : "",
+      unit: line.unit ?? "",
     })),
   );
   const [labour, setLabour] = useState<CostLineDraft[]>(() =>
@@ -169,14 +171,25 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
           (line) =>
             line.label.trim() || parseAmount(line.amount, currency) > 0,
         )
-        .map((line) => ({
-          id: line.id,
-          label: line.label.trim() || "—",
-          amountMyr: toMyr(
-            Math.max(0, parseAmount(line.amount, currency)),
-            currency,
-          ),
-        }));
+        .map((line) => {
+          const base = {
+            id: line.id,
+            label: line.label.trim() || "—",
+            amountMyr: toMyr(
+              Math.max(0, parseAmount(line.amount, currency)),
+              currency,
+            ),
+          };
+          const qty = parseDecimal(line.qty ?? "");
+          if (qty > 0) {
+            return {
+              ...base,
+              qty,
+              unit: line.unit?.trim() || undefined,
+            };
+          }
+          return base;
+        });
 
     const hiddenValues: Partial<Record<HiddenCostKey, number>> = {};
     for (const key of HIDDEN_COST_KEYS) {
@@ -267,6 +280,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
               lines={direct}
               onChange={setDirect}
               labelPlaceholder={t.farm.wizard.lineLabelPlaceholder}
+              showQuantity
             />
           </>
         ) : null}
