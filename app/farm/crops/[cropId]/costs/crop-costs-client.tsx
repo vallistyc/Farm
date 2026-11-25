@@ -109,6 +109,41 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     t.farm.wizard.marginHint,
   ];
 
+  const lossPresets = [
+    {
+      value: "3",
+      label: t.farm.wizard.lossPresetLowLabel,
+      desc: t.farm.wizard.lossPresetLowDesc,
+    },
+    {
+      value: "5",
+      label: t.farm.wizard.lossPresetAvgLabel,
+      desc: t.farm.wizard.lossPresetAvgDesc,
+    },
+    {
+      value: "10",
+      label: t.farm.wizard.lossPresetHighLabel,
+      desc: t.farm.wizard.lossPresetHighDesc,
+    },
+  ];
+  const marginPresets = [
+    {
+      value: "10",
+      label: t.farm.wizard.marginPresetLowLabel,
+      desc: t.farm.wizard.marginPresetLowDesc,
+    },
+    {
+      value: "20",
+      label: t.farm.wizard.marginPresetStdLabel,
+      desc: t.farm.wizard.marginPresetStdDesc,
+    },
+    {
+      value: "30",
+      label: t.farm.wizard.marginPresetHighLabel,
+      desc: t.farm.wizard.marginPresetHighDesc,
+    },
+  ];
+
   const linesTotal = (lines: CostLineDraft[]) =>
     lines.reduce((sum, line) => sum + parseAmount(line.amount, currency), 0);
   const hiddenTotal = HIDDEN_COST_KEYS.reduce(
@@ -380,6 +415,12 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
               suffix="%"
               hint={t.farm.wizard.lossHint}
             />
+            <PresetChips
+              title={t.farm.wizard.lossSuggestTitle}
+              items={lossPresets}
+              activeValue={loss}
+              onSelect={setLoss}
+            />
           </div>
         ) : null}
 
@@ -393,6 +434,12 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
               inputMode="decimal"
               suffix="%"
               hint={t.calc.marginHint}
+            />
+            <PresetChips
+              title={t.farm.wizard.marginSuggestTitle}
+              items={marginPresets}
+              activeValue={margin}
+              onSelect={setMargin}
             />
             <p className="text-xs leading-relaxed text-ink-muted">
               {t.farm.wizard.savedNote}
@@ -456,6 +503,63 @@ function CostSuggestions({
             {t.farm.costItems[key]}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+
+function PresetChips({
+  title,
+  items,
+  activeValue,
+  onSelect,
+}: {
+  title: string;
+  items: { value: string; label: string; desc: string }[];
+  activeValue: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-surface-muted/40 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+        {title}
+      </p>
+      <div className="mt-2 grid gap-2">
+        {items.map((item) => {
+          const active = activeValue.trim() === item.value;
+          return (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => onSelect(item.value)}
+              aria-pressed={active}
+              className={`flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
+                active
+                  ? "border-brand/50 bg-brand/10"
+                  : "border-line bg-surface hover:bg-surface-muted"
+              }`}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">
+                  {item.label}{" "}
+                  <span className="font-semibold text-brand">{item.value}%</span>
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-ink-muted">
+                  {item.desc}
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className={`shrink-0 text-sm ${
+                  active ? "text-brand" : "text-ink-muted"
+                }`}
+              >
+                {active ? "✓" : "›"}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
