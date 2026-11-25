@@ -157,6 +157,7 @@ const en = {
     cropCommodity: "Commodity",
     plantingDate: "Planting date",
     harvestDate: "Expected harvest",
+    dateHint: "Tap the calendar, or type day-month-year directly.",
     saveCrop: "Save and enter costs",
     selectField: "Choose a field",
     selectCommodity: "Choose a commodity",

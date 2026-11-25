@@ -56,6 +56,18 @@ export function TextField({
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
+          onClick={(event) => {
+            // For an empty date field, tapping anywhere in the box opens the
+            // calendar (not just the tiny icon). Once a value exists, clicking
+            // focuses a segment so the user can still type directly.
+            if (type === "date" && !value) {
+              try {
+                event.currentTarget.showPicker?.();
+              } catch {
+                /* showPicker needs a user gesture / may be unsupported */
+              }
+            }
+          }}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           className={`${inputBase} ${

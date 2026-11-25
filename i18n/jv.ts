@@ -158,6 +158,7 @@ const jv: Dictionary = {
     cropCommodity: "Komoditas",
     plantingDate: "Tanggal tandur",
     harvestDate: "Kira-kira panen",
+    dateHint: "Klik ikon kalender, utawa ketik langsung tanggal-wulan-taun.",
     saveCrop: "Simpen lan isi biaya",
     selectField: "Pilih tegal",
     selectCommodity: "Pilih komoditas",

@@ -157,6 +157,7 @@ const ms: Dictionary = {
     cropCommodity: "Komoditi",
     plantingDate: "Tarikh tanam",
     harvestDate: "Jangkaan tuai",
+    dateHint: "Ketik ikon kalendar, atau taip terus hari-bulan-tahun.",
     saveCrop: "Simpan dan isi kos",
     selectField: "Pilih ladang",
     selectCommodity: "Pilih komoditi",

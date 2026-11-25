@@ -157,6 +157,7 @@ const id: Dictionary = {
     cropCommodity: "Komoditas",
     plantingDate: "Tanggal tanam",
     harvestDate: "Perkiraan panen",
+    dateHint: "Ketuk ikon kalender, atau ketik langsung tanggal-bulan-tahun.",
     saveCrop: "Simpan dan isi biaya",
     selectField: "Pilih lahan",
     selectCommodity: "Pilih komoditas",

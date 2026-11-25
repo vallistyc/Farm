@@ -169,6 +169,7 @@ export default function NewCropPage() {
             if (harvestDate && harvestDate <= value) setHarvestDate("");
           }}
           type="date"
+          hint={t.farm.dateHint}
           error={errors.planting}
         />
 
@@ -178,6 +179,7 @@ export default function NewCropPage() {
           value={harvestDate}
           onChange={setHarvestDate}
           type="date"
+          hint={t.farm.dateHint}
           error={errors.harvest}
         />
 
