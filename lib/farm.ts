@@ -53,6 +53,10 @@ export type Crop = {
   lossPercent: number;
   /** null until the farmer explicitly enters it in the cost wizard. */
   marginPercent: number | null;
+  /** Farmer's chosen selling price per unit (MYR base); null until set. */
+  sellPriceMyr: number | null;
+  /** How many pieces the farmer expects to sell at sellPriceMyr; null until set. */
+  sellQty: number | null;
   costs: CropCosts;
   updatedAt: string;
 };
@@ -69,6 +73,8 @@ export type CropCostInput = {
   yieldKg: number;
   lossPercent: number;
   marginPercent: number;
+  sellPriceMyr: number | null;
+  sellQty: number | null;
 };
 
 export function emptyCosts(): CropCosts {
@@ -125,6 +131,14 @@ export function hasCosts(crop: Crop): boolean {
 
 export function isPriceable(crop: Crop): boolean {
   return crop.yieldKg > 0 && hasCosts(crop);
+}
+
+/**
+ * A crop only earns a price recommendation once the farmer has entered costs,
+ * a harvest quantity, and an explicit profit margin.
+ */
+export function isRecommendable(crop: Crop): boolean {
+  return isPriceable(crop) && crop.marginPercent !== null;
 }
 
 export function latestCrop(crops: Crop[]): Crop | undefined {

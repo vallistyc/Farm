@@ -28,6 +28,8 @@ create table if not exists public.crops (
   yield_kg numeric not null default 0,
   loss_percent numeric not null default 10,
   margin_percent numeric,
+  sell_price numeric,
+  sell_qty numeric,
   costs jsonb not null default '{"direct":[],"labour":[],"hidden":{}}'::jsonb,
   updated_at timestamptz not null default now(),
   primary key (owner_id, id),

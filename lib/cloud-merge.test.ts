@@ -29,6 +29,8 @@ function crop(overrides: Partial<Crop> = {}): Crop {
     yieldKg: 100,
     lossPercent: 10,
     marginPercent: 10,
+    sellPriceMyr: null,
+    sellQty: null,
     costs: {
       direct: [{ id: "d1", label: "Seed", amountMyr: 50 }],
       labour: [],

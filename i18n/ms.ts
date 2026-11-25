@@ -105,6 +105,9 @@ const ms: Dictionary = {
     demoNote:
       "Harga pasaran mengikuti data rasmi PriceCatcher (Malaysia) dan Bapanas (Indonesia). Periksa tarikh pemerhatian sebelum menjual.",
     latestCrop: "Tanaman terkini",
+    selectedCrop: "Tanaman terpilih",
+    allFields: "Semua ladang",
+    newestCrop: "Tanaman terbaru",
     viewRecommendation: "Lihat syor",
     summaryLine: "{commodity} · {status}",
     recommendedLabel: "Harga disyorkan",
@@ -222,6 +225,12 @@ const ms: Dictionary = {
       marginPresetStdDesc: "Sasaran keuntungan biasa",
       marginPresetHighLabel: "Tinggi",
       marginPresetHighDesc: "Jika permintaan tinggi atau kualiti premium",
+      priceTitle: "Harga jualan",
+      priceHint:
+        "Isi harga yang anda rancang untuk jual, dan berapa banyak yang boleh dijual pada harga itu.",
+      priceLabel: "Harga jualan",
+      priceQtyLabel: "Kuantiti boleh dijual",
+      priceQtyHint: "Berapa pcs yang anda jangka terjual pada harga ini.",
       addLine: "Tambah kos",
       suggestionTitle: "Kos yang dicadangkan",
       suggestionHint: "Tekan kos untuk menambah, kemudian masukkan jumlah.",
@@ -238,6 +247,7 @@ const ms: Dictionary = {
       lossHint: "Susut biasa 5-15%.",
       errorYield: "Masukkan jangkaan hasil lebih daripada 0.",
       errorLoss: "Susut mesti antara 0 dan 100.",
+      errorPrice: "Isi harga jualan lebih daripada 0.",
       save: "Simpan kos",
       savedNote:
         "Disimpan pada peranti ini. Data tidak keluar dari telefon anda.",

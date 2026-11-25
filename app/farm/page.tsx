@@ -4,22 +4,26 @@ import Link from "next/link";
 import { useAuth, useSettings } from "@/components/providers";
 import { PageHeader, EmptyState } from "@/components/page-header";
 import { GlyphIcon } from "@/components/icons";
+import { StatusBadge } from "@/components/status-badge";
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
 } from "@/components/button-styles";
 import { useFarm } from "@/lib/farm-store";
 import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
-import { cropCostTotals } from "@/lib/farm";
+import { useMarketPrices } from "@/components/market-prices";
+import { cropCostTotals, isRecommendable, priceCrop } from "@/lib/farm";
+import { preferredMarket } from "@/lib/market-context";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
-import { formatMoney } from "@/lib/currency";
+import { IDR_PER_MYR, formatMoney } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 
 export default function FarmPage() {
-  const { t, locale, currency } = useSettings();
+  const { t, locale, currency, country } = useSettings();
   const { user } = useAuth();
   const farm = useFarm(user?.id);
   const { custom } = useCommodityCatalog();
+  const snapshot = useMarketPrices();
 
   if (!user) return null;
 
@@ -82,47 +86,90 @@ export default function FarmPage() {
                     fieldCrops.map((crop) => {
                       const totals = cropCostTotals(crop.costs);
                       const hasCosts = totals.totalCostMyr > 0;
+                      const recommendable = isRecommendable(crop);
+                      const market = recommendable
+                        ? preferredMarket(
+                            country,
+                            crop.commodityId,
+                            snapshot,
+                            IDR_PER_MYR,
+                          )
+                        : null;
+                      const pricing =
+                        recommendable && market
+                          ? priceCrop(crop, market.priceMyr)
+                          : null;
 
                       return (
                         <Link
                           key={crop.id}
                           href={`/farm/crops/${crop.id}`}
-                          className="flex min-h-14 items-center gap-3 rounded-xl border border-line bg-background px-3 py-2 transition-colors hover:bg-surface-muted"
+                          className="block rounded-xl border border-line bg-background px-3 py-2.5 transition-colors hover:bg-surface-muted"
                         >
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                            <GlyphIcon name="farm" className="size-5" />
+                          <span className="flex min-h-14 items-center gap-3">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                              <GlyphIcon name="farm" className="size-5" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">
+                                {resolveCommodityName(
+                                  crop.commodityId,
+                                  custom,
+                                  t.commodities as Record<string, string>,
+                                )}
+                              </span>
+                              <span className="line-clamp-2 text-xs text-ink-muted">
+                                {interpolate(t.farm.cropMeta, {
+                                  field: field.name,
+                                  date: formatDate(
+                                    crop.harvestDate,
+                                    localeTag,
+                                  ),
+                                })}
+                              </span>
+                            </span>
+                            {hasCosts ? (
+                              <span className="shrink-0 text-right text-xs font-semibold text-ink-muted">
+                                {formatMoney(
+                                  totals.totalCostMyr,
+                                  currency,
+                                  localeTag,
+                                )}
+                              </span>
+                            ) : (
+                              <span
+                                aria-hidden="true"
+                                className="shrink-0 text-lg text-ink-muted"
+                              >
+                                ›
+                              </span>
+                            )}
                           </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-semibold">
-                              {resolveCommodityName(
-                                crop.commodityId,
-                                custom,
-                                t.commodities as Record<string, string>,
-                              )}
+
+                          {pricing ? (
+                            <span className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-surface-muted px-2.5 py-2">
+                              <span className="text-[11px] text-ink-muted">
+                                {t.home.recommendedLabel}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className="text-sm font-semibold">
+                                  {formatMoney(
+                                    pricing.recommendedPriceMyr,
+                                    currency,
+                                    localeTag,
+                                  )}
+                                </span>
+                                <StatusBadge
+                                  status={pricing.status}
+                                  label={t.status[pricing.status]}
+                                />
+                              </span>
                             </span>
-                            <span className="line-clamp-2 text-xs text-ink-muted">
-                              {interpolate(t.farm.cropMeta, {
-                                field: field.name,
-                                date: formatDate(crop.harvestDate, localeTag),
-                              })}
+                          ) : recommendable ? (
+                            <span className="mt-2 block text-[11px] text-ink-muted">
+                              {t.radar.unavailableBadge}
                             </span>
-                          </span>
-                          {hasCosts ? (
-                            <span className="shrink-0 text-right text-xs font-semibold text-ink-muted">
-                              {formatMoney(
-                                totals.totalCostMyr,
-                                currency,
-                                localeTag,
-                              )}
-                            </span>
-                          ) : (
-                            <span
-                              aria-hidden="true"
-                              className="shrink-0 text-lg text-ink-muted"
-                            >
-                              ›
-                            </span>
-                          )}
+                          ) : null}
                         </Link>
                       );
                     })

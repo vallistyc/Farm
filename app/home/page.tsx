@@ -6,13 +6,22 @@ import { BrandMark } from "@/components/brand-mark";
 import { GeneralAdviceCard } from "@/components/general-advice-card";
 import { GlyphIcon, type ActionIconName } from "@/components/icons";
 import { StatusBadge } from "@/components/status-badge";
+import { SelectField } from "@/components/form-fields";
 import { useFarm } from "@/lib/farm-store";
-import { getCommodity } from "@/lib/commodities";
 import { resolveCommodityName, useCommodityCatalog } from "@/lib/commodity-store";
 import { useMarketPrices } from "@/components/market-prices";
-import { latestCrop, latestPriceableCrop, priceCrop } from "@/lib/farm";
+import {
+  hasCosts,
+  isPriceable,
+  isRecommendable,
+  latestCrop,
+  priceCrop,
+  type Crop,
+} from "@/lib/farm";
+import { ALL_FIELDS, useViewSelection } from "@/lib/view-selection";
 import { LOCALE_TAGS, interpolate } from "@/i18n";
 import { IDR_PER_MYR, formatMoney } from "@/lib/currency";
+import { formatDate } from "@/lib/format";
 import { marketSourceLabel } from "@/lib/market-display";
 import { preferredMarket } from "@/lib/market-context";
 
@@ -29,21 +38,75 @@ export default function HomePage() {
   const localeTag = LOCALE_TAGS[locale];
   const snapshot = useMarketPrices();
   const { custom } = useCommodityCatalog();
-  const pricedCrop = latestPriceableCrop(farm.data.crops);
-  const pricedMarket = pricedCrop
-    ? preferredMarket(country, pricedCrop.commodityId, snapshot, IDR_PER_MYR)
-    : null;
-  const pricedCommodity = pricedCrop
-    ? getCommodity(pricedCrop.commodityId)
-    : undefined;
+  const { selection, selectField, selectCrop } = useViewSelection(user?.id);
 
   if (!user) return null;
 
+  const { fields, crops } = farm.data;
+
+  const cropLabel = (crop: Crop) =>
+    resolveCommodityName(
+      crop.commodityId,
+      custom,
+      t.commodities as Record<string, string>,
+    );
+
+  // A stored field can be deleted later; fall back to the whole farm.
+  const fieldInScope = fields.some((field) => field.id === selection.fieldId);
+  const scopedCrops =
+    selection.fieldId === ALL_FIELDS || !fieldInScope
+      ? crops
+      : crops.filter((crop) => crop.fieldId === selection.fieldId);
+
+  const selectedCrop =
+    scopedCrops.find((crop) => crop.id === selection.cropId) ??
+    latestCrop(scopedCrops.filter(isRecommendable)) ??
+    latestCrop(scopedCrops);
+
+  const selectedField = fields.find(
+    (field) => field.id === selectedCrop?.fieldId,
+  );
+  const selectedMarket = selectedCrop
+    ? preferredMarket(country, selectedCrop.commodityId, snapshot, IDR_PER_MYR)
+    : null;
   const pricing =
-    pricedCrop && pricedCommodity && pricedMarket
-      ? priceCrop(pricedCrop, pricedMarket.priceMyr)
+    selectedCrop && selectedMarket && isRecommendable(selectedCrop)
+      ? priceCrop(selectedCrop, selectedMarket.priceMyr)
       : null;
-  const recentCrop = latestCrop(farm.data.crops);
+
+  const costsHref = selectedCrop
+    ? `/farm/crops/${selectedCrop.id}/costs`
+    : "/farm/crops/new";
+  const recommendationHref = selectedCrop
+    ? `/farm/crops/${selectedCrop.id}/recommendation`
+    : "/farm";
+
+  // What to show when the picked crop cannot produce a recommendation yet.
+  const guidance = !selectedCrop
+    ? null
+    : !hasCosts(selectedCrop)
+      ? {
+          text: interpolate(t.advice.recordCosts, { crop: cropLabel(selectedCrop) }),
+          label: t.farm.inputCosts,
+          href: costsHref,
+        }
+      : !isPriceable(selectedCrop)
+        ? {
+            text: interpolate(t.advice.recordYield, { crop: cropLabel(selectedCrop) }),
+            label: t.farm.editCosts,
+            href: costsHref,
+          }
+        : selectedCrop.marginPercent === null
+          ? {
+              text: t.farm.marginNeeded,
+              label: t.farm.editCosts,
+              href: costsHref,
+            }
+          : {
+              text: t.farm.marketNoData,
+              label: t.home.viewRecommendation,
+              href: recommendationHref,
+            };
 
   const actions: {
     key: "quickCalc" | "quickCost" | "quickMarket";
@@ -51,21 +114,13 @@ export default function HomePage() {
   }[] = [
     {
       key: "quickCalc",
-      href: pricedCrop
-        ? `/farm/crops/${pricedCrop.id}/calculate`
+      href: selectedCrop
+        ? `/farm/crops/${selectedCrop.id}/calculate`
         : "/farm/crops/new",
     },
-    {
-      key: "quickCost",
-      href: recentCrop ? `/farm/crops/${recentCrop.id}/costs` : "/farm/crops/new",
-    },
+    { key: "quickCost", href: costsHref },
     { key: "quickMarket", href: "/price-radar" },
   ];
-
-  const emptyHref = recentCrop
-    ? `/farm/crops/${recentCrop.id}/costs`
-    : "/farm/crops/new";
-  const emptyLabel = recentCrop ? t.farm.inputCosts : t.farm.addCrop;
 
   return (
     <div className="space-y-5 pb-14">
@@ -92,18 +147,47 @@ export default function HomePage() {
           ) : null}
         </div>
 
-        {pricing && pricedCrop ? (
+        {crops.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            <SelectField
+              id="home-field-filter"
+              label={t.farm.cropField}
+              value={selection.fieldId === ALL_FIELDS ? "" : selection.fieldId}
+              onChange={(value) => selectField(value || ALL_FIELDS)}
+              placeholder={t.home.allFields}
+            >
+              {fields.map((field) => (
+                <option key={field.id} value={field.id}>
+                  {field.name}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              id="home-crop-filter"
+              label={t.farm.cropCommodity}
+              value={selectedCrop?.id ?? ""}
+              onChange={(value) => selectCrop(value || null)}
+              placeholder={t.home.newestCrop}
+            >
+              {scopedCrops.map((crop) => (
+                <option key={crop.id} value={crop.id}>
+                  {cropLabel(crop)} ·{" "}
+                  {formatDate(crop.harvestDate, localeTag)}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+        ) : null}
+
+        {pricing && selectedCrop ? (
           <>
             <p className="mt-4 text-xs font-medium uppercase tracking-wide text-ink-muted">
-              {t.home.latestCrop}
+              {t.home.selectedCrop}
             </p>
-            <p className="text-base font-semibold">
-              {resolveCommodityName(
-                pricedCrop.commodityId,
-                custom,
-                t.commodities as Record<string, string>,
-              )}
-            </p>
+            <p className="text-base font-semibold">{cropLabel(selectedCrop)}</p>
+            {selectedField ? (
+              <p className="text-xs text-ink-muted">{selectedField.name}</p>
+            ) : null}
             <p className="mt-3 text-xs text-ink-muted">
               {t.home.recommendedLabel}
             </p>
@@ -112,15 +196,27 @@ export default function HomePage() {
             </p>
             <p className="text-xs text-ink-muted">{t.common.perKg}</p>
             <p className="mt-1 text-[11px] text-ink-muted">
-              {pricedMarket
-                ? marketSourceLabel(pricedMarket, t, localeTag)
+              {selectedMarket
+                ? marketSourceLabel(selectedMarket, t, localeTag)
                 : t.radar.unavailableBadge}
             </p>
             <Link
-              href={`/farm/crops/${pricedCrop.id}/recommendation`}
+              href={recommendationHref}
               className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-brand"
             >
               {t.home.viewRecommendation} ›
+            </Link>
+          </>
+        ) : guidance ? (
+          <>
+            <p className="mt-4 text-sm leading-relaxed text-ink-muted">
+              {guidance.text}
+            </p>
+            <Link
+              href={guidance.href}
+              className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand"
+            >
+              {guidance.label} ›
             </Link>
           </>
         ) : (
@@ -129,10 +225,10 @@ export default function HomePage() {
               {t.home.summaryEmpty}
             </p>
             <Link
-              href={emptyHref}
+              href="/farm/crops/new"
               className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand"
             >
-              {emptyLabel} ›
+              {t.farm.addCrop} ›
             </Link>
           </>
         )}
@@ -170,7 +266,9 @@ export default function HomePage() {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto flex w-full max-w-md justify-end px-4">
         <Link
-          href={pricedCrop ? `/ai-advice?crop=${pricedCrop.id}` : "/ai-advice"}
+          href={
+            selectedCrop ? `/ai-advice?crop=${selectedCrop.id}` : "/ai-advice"
+          }
           aria-label={t.home.askAi}
           className="pointer-events-auto inline-flex min-h-12 items-center gap-2 rounded-full bg-brand px-4 text-sm font-semibold text-brand-ink shadow-lg shadow-black/15"
         >

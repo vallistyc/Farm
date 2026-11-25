@@ -45,6 +45,8 @@ export type CropRow = {
   yield_kg: number;
   loss_percent: number;
   margin_percent: number | null;
+  sell_price: number | null;
+  sell_qty: number | null;
   costs: CropCosts;
   updated_at: string;
 };
@@ -159,6 +161,14 @@ export function parseCropRows(rows: unknown[]): Crop[] {
         row.margin_percent === null || row.margin_percent === undefined
           ? null
           : toNumber(row.margin_percent, 0),
+      sellPriceMyr:
+        row.sell_price === null || row.sell_price === undefined
+          ? null
+          : Math.max(0, toNumber(row.sell_price, 0)),
+      sellQty:
+        row.sell_qty === null || row.sell_qty === undefined
+          ? null
+          : Math.max(0, toNumber(row.sell_qty, 0)),
       costs: parseCosts(row.costs),
       updatedAt: toText(row.updated_at) ?? new Date(0).toISOString(),
     });
@@ -192,6 +202,8 @@ export function toCropRows(ownerId: string, crops: Crop[]): CropRow[] {
     yield_kg: crop.yieldKg,
     loss_percent: crop.lossPercent,
     margin_percent: crop.marginPercent,
+    sell_price: crop.sellPriceMyr,
+    sell_qty: crop.sellQty,
     costs: crop.costs,
     updated_at: crop.updatedAt,
   }));

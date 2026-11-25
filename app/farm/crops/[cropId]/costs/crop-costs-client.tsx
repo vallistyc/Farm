@@ -24,7 +24,7 @@ import { LOCALE_TAGS, interpolate } from "@/i18n";
 import { formatAmount, fromMyr, toMyr } from "@/lib/currency";
 import { parseAmount, parseDecimal } from "@/lib/format";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 type HiddenDraft = Partial<Record<HiddenCostKey, string>>;
 
@@ -73,6 +73,16 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       ? String(crop.marginPercent)
       : "",
   );
+  const [sellPrice, setSellPrice] = useState(() =>
+    crop?.sellPriceMyr !== null && crop?.sellPriceMyr !== undefined
+      ? String(fromMyr(crop.sellPriceMyr, currency))
+      : "",
+  );
+  const [sellQty, setSellQty] = useState(() =>
+    crop?.sellQty !== null && crop?.sellQty !== undefined
+      ? String(crop.sellQty)
+      : "",
+  );
   const [error, setError] = useState<string | null>(null);
 
   if (!user) return null;
@@ -100,6 +110,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     t.farm.wizard.hiddenTitle,
     t.farm.wizard.yieldTitle,
     t.farm.wizard.marginTitle,
+    t.farm.wizard.priceTitle,
   ];
   const hints = [
     t.farm.wizard.directHint,
@@ -107,6 +118,7 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
     t.farm.wizard.hiddenHint,
     t.farm.wizard.yieldHint,
     t.farm.wizard.marginHint,
+    t.farm.wizard.priceHint,
   ];
 
   const lossPresets = [
@@ -180,6 +192,13 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
           return;
         }
       }
+      if (step === 4) {
+        const marginValue = parseDecimal(margin);
+        if (margin.trim() === "" || marginValue < 0 || marginValue > 100) {
+          setError(t.calc.errorMargin);
+          return;
+        }
+      }
       setStep((current) => current + 1);
       return;
     }
@@ -199,6 +218,12 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       setError(t.calc.errorMargin);
       return;
     }
+    const priceValue = parseAmount(sellPrice, currency);
+    if (sellPrice.trim() !== "" && priceValue <= 0) {
+      setError(t.farm.wizard.errorPrice);
+      return;
+    }
+    const qtyValue = parseDecimal(sellQty);
 
     const toLines = (lines: CostLineDraft[]) =>
       lines
@@ -243,6 +268,8 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
       yieldKg: yieldValue,
       lossPercent: lossValue,
       marginPercent: marginValue,
+      sellPriceMyr: sellPrice.trim() === "" ? null : toMyr(priceValue, currency),
+      sellQty: sellQty.trim() === "" || qtyValue <= 0 ? null : qtyValue,
     });
     router.push(`/farm/crops/${cropId}`);
   }
@@ -440,6 +467,29 @@ export function CropCostsClient({ cropId }: { cropId: string }) {
               items={marginPresets}
               activeValue={margin}
               onSelect={setMargin}
+            />
+          </div>
+        ) : null}
+
+        {step === 5 ? (
+          <div className="space-y-4">
+            <TextField
+              id="crop-sell-price"
+              label={t.farm.wizard.priceLabel}
+              value={sellPrice}
+              onChange={setSellPrice}
+              inputMode="decimal"
+              suffix={currency}
+              hint={t.farm.wizard.priceHint}
+            />
+            <TextField
+              id="crop-sell-qty"
+              label={t.farm.wizard.priceQtyLabel}
+              value={sellQty}
+              onChange={setSellQty}
+              inputMode="decimal"
+              suffix="pcs"
+              hint={t.farm.wizard.priceQtyHint}
             />
             <p className="text-xs leading-relaxed text-ink-muted">
               {t.farm.wizard.savedNote}
